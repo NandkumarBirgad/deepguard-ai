@@ -1,0 +1,80 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Result - Deepfake Detector</title>
+  <style>
+    body {
+      font-family: "Segoe UI", Roboto, sans-serif;
+      background: linear-gradient(135deg, #2575fc, #6a11cb);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+      color: #333;
+    }
+    .card {
+      background: #fff;
+      padding: 40px;
+      border-radius: 16px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+      text-align: center;
+      max-width: 520px;
+      width: 100%;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    .card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 8px 30px rgba(0,0,0,0.2);
+    }
+    h1 {
+      margin-bottom: 24px;
+      color: #222;
+    }
+    .real {
+      color: #1cc88a;
+      font-weight: bold;
+    }
+    .fake {
+      color: #e74a3b;
+      font-weight: bold;
+    }
+    a {
+      color: #2575fc;
+      text-decoration: none;
+      font-weight: 600;
+    }
+    a:hover {
+      text-decoration: underline;
+    }
+    ul {
+      list-style: none;
+      padding: 0;
+      margin-top: 12px;
+      text-align: left;
+    }
+    li {
+      padding: 6px 0;
+      border-bottom: 1px solid #f0f0f0;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Detection Result</h1>
+    <p><strong>Label:</strong>
+      <span class="{{ 'real' if label.lower()=='real' else 'fake' }}">{{ label }}</span>
+    </p>
+    <p><strong>Confidence:</strong> {{ confidence }}%</p>
+    <p><a href="{{ url_for('index') }}">← Try another image</a></p>
+
+    <h3>Class Probabilities</h3>
+    <ul>
+      {% for i in range(classes|length) %}
+        <li>{{ classes[i] }} : {{ (probs[i]*100) | round(2) }}%</li>
+      {% endfor %}
+    </ul>
+  </div>
+</body>
+</html>

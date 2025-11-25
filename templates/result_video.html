@@ -1,0 +1,109 @@
+<!doctype html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <title>Video Result - Deepfake Detector</title>
+  <style>
+    body {
+      font-family: "Segoe UI", Roboto, sans-serif;
+      background: linear-gradient(135deg, #2575fc, #6a11cb);
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      padding: 40px;
+      min-height: 100vh;
+      margin: 0;
+      color: #333;
+    }
+
+    .container {
+      background: #fff;
+      padding: 40px;
+      border-radius: 16px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+      width: 100%;
+      max-width: 700px;
+      text-align: center;
+    }
+
+    h1 {
+      color: #222;
+      margin-bottom: 24px;
+    }
+
+    video {
+      max-width: 100%;
+      border-radius: 12px;
+      margin-bottom: 16px;
+    }
+
+    .label {
+      font-size: 20px;
+      font-weight: bold;
+    }
+
+    .real {
+      color: #1cc88a;
+    }
+
+    .fake {
+      color: #e74a3b;
+    }
+
+    a {
+      color: #2575fc;
+      text-decoration: none;
+      font-weight: 600;
+    }
+
+    a:hover {
+      text-decoration: underline;
+    }
+
+    .frame-list {
+      margin-top: 16px;
+      max-height: 200px;
+      overflow-y: auto;
+      text-align: left;
+      border: 1px solid #f0f0f0;
+      border-radius: 8px;
+      padding: 8px;
+    }
+
+    .frame-list li {
+      padding: 6px 0;
+      border-bottom: 1px solid #f0f0f0;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <h1>Video Detection Result</h1>
+
+    <video src="{{ url_for('uploaded_file', filename=filename) }}" controls></video>
+
+    <p><strong>Overall Label:</strong>
+      <span class="label {{ 'real' if label.lower()=='real' else 'fake' }}">{{ label }}</span>
+    </p>
+    <p><strong>Confidence:</strong> {{ confidence }}%</p>
+
+    <h3>Frame-wise Predictions</h3>
+    <div class="frame-list">
+      <ul>
+        {% for idx, result in frame_results_with_idx %}
+        <li>Frame {{ idx }}:
+          <span class="{{ 'real' if result[0].lower()=='real' else 'fake' }}">
+            {{ result[0].upper() }}
+          </span> ({{ (result[1]*100)|round(2) }}%)
+        </li>
+        {% endfor %}
+      </ul>
+    </div>
+
+    <p style="margin-top:16px;"><a href="{{ url_for('index') }}">← Try another file</a></p>
+  </div>
+</body>
+
+</html>

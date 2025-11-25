@@ -1,0 +1,1290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DeepguardAI - Advanced Deepfake Detection & Media Verification</title>
+    <meta name="description" content="Protect against digital deception with DeepguardAI. Advanced AI-powered deepfake detection for images and videos. Analyze media authenticity in real-time with confidence scores and risk assessment." />
+    <meta name="author" content="DeepguardAI" />
+    <meta name="keywords" content="deepfake detector, AI detection, media verification, fake video detection, image authentication, digital forensics" />
+    
+    <meta property="og:title" content="DeepguardAI - Advanced Deepfake Detection" />
+    <meta property="og:description" content="AI-powered deepfake detection to combat misinformation and enhance digital safety" />
+    <meta property="og:type" content="website" />
+    <meta property="og:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
+    
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="DeepguardAI - Deepfake Detection" />
+    <meta name="twitter:description" content="Advanced AI detection for deepfakes and manipulated media" />
+    <meta name="twitter:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
+    
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+
+    <!-- Auth Script -->
+    <script src="/static/auth.js"></script>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            color: #f1f5f9;
+            background: linear-gradient(-45deg, #1e3c72, #2a5298, #8e2de2, #4a00e0);
+            background-size: 400% 400%;
+            animation: gradientShift 15s ease infinite;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        @keyframes pulse {
+            0%, 100% {
+                box-shadow: 0 0 20px rgba(168, 85, 247, 0.4);
+            }
+            50% {
+                box-shadow: 0 0 30px rgba(168, 85, 247, 0.7);
+            }
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 1rem;
+        }
+        
+        .glass-effect {
+            background: rgba(161, 179, 189, 0.08);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            border-radius: 16px;
+        }
+        
+        .animate-fade-in {
+            animation: fadeIn 0.6s ease-out forwards;
+        }
+        
+        .animate-pulse-glow {
+            animation: pulse 2s ease-in-out infinite;
+        }
+        
+        .animate-spin {
+            animation: spin 1s linear infinite;
+        }
+        
+        /* Header */
+        header {
+            position: sticky;
+            top: 0;
+            width: 100%;
+            z-index: 50;
+            backdrop-filter: blur(18px);
+            background: rgba(22, 22, 36, 0.65);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.35);
+            transition: all 0.3s ease;
+        }
+        header:hover{
+            backdrop-filter: blur(22px);
+            background: rgba(22, 22, 36, 0.85);
+        }
+        .header {
+            width: 100%;
+            background: linear-gradient(90deg, #14162e, #1e1b4b);
+            padding: 12px 0;
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        }
+        nav {
+            padding: 1rem 0;
+        }
+        .nav-container {
+            max-width: 1350px;
+            margin:auto;
+            padding: 0 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .nav-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        
+        .nav-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+        }
+        .nav-logo-icon {
+            width: 32px;
+            height: 32px;
+            color: #a855f7;
+            filter: brightness(0 0 6px rgba(168,85,247,0.6));
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            transition: transform 0.3s;
+            cursor: pointer;
+        }
+        
+        .logo:hover {
+            transform: scale(1.05);
+        }
+        
+        .logo-text {
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: linear-gradient(to right, #60a5fa, #a855f7);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+        .nav-bar{
+            width: 100;
+            display: flex;
+            justify-content: flex;
+            align-items: center;
+        }
+        
+        .nav-links {
+            display: flex;
+            gap: 1.5rem;
+            align-items: center;
+            margin-left: auto;
+        }
+
+        
+        @media (min-width: 768px) {
+            .nav-links {
+                display: flex;
+            }
+        }
+        
+        .nav-link {
+            color: rgba(241, 245, 249, 0.9);
+            font-weight: 500;
+            cursor: pointer;
+            transition: color 0.2s;
+            background: none;
+            border: none;
+            font-size: 1rem;
+        }
+        
+        .nav-link:hover {
+            color: #f1f5f9;
+        }
+        
+        .btn {
+            padding: 0.5rem 1.5rem;
+            border-radius: 9999px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 1rem;
+        }
+        
+        .btn-primary {
+            background: #8b5cf6;
+            color: white;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        
+        .btn-primary:hover {
+            background: #7c3aed;
+            box-shadow: 0 0 20px rgba(139, 92, 246, 0.5);
+        }
+        
+        .btn-white {
+            background: white;
+            color: #8b5cf6;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+        
+        .btn-white:hover {
+            background: rgba(255, 255, 255, 0.9);
+            transform: scale(1.05);
+            box-shadow: 0 0 20px rgba(139, 92, 246, 0.5);
+        }
+        
+        .btn-secondary {
+            background: rgba(30, 41, 59, 0.8);
+            color: rgb(0, 6, 92);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        
+        .btn-secondary:hover {
+            background: rgba(30, 41, 59, 0.9);
+            transform: scale(1.02);
+        }
+        
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .btn-lg {
+            padding: 1rem 2rem;
+            font-size: 1.125rem;
+        }
+        
+        .mobile-menu-btn {
+            display: block;
+            background: none;
+            border: none;
+            color: white;
+            cursor: pointer;
+            padding: 0.5rem;
+        }
+        
+        @media (min-width: 768px) {
+            .mobile-menu-btn {
+                display: none;
+            }
+        }
+        
+        .mobile-menu {
+            display: none;
+            margin-top: 1rem;
+            padding-bottom: 1rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.2);
+            animation: fadeIn 0.3s ease-out;
+        }
+        
+        .mobile-menu.active {
+            display: block;
+        }
+        
+        .mobile-menu-links {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            padding-top: 1rem;
+        }
+        
+        /* Hero Section */
+        .hero {
+            position: relative;
+            z-index: 10;
+            padding: 5rem 0;
+            text-align: center;
+        }
+        
+        @media (min-width: 1024px) {
+            .hero {
+                padding: 8rem 0;
+            }
+        }
+        
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1.5rem;
+            border-radius: 9999px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            margin-bottom: 2rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: rgba(241, 245, 249, 0.9);
+        }
+        
+        .hero h1 {
+            font-size: 3rem;
+            font-weight: 700;
+            line-height: 1.2;
+            margin-bottom: 1.5rem;
+        }
+        
+        @media (min-width: 1024px) {
+            .hero h1 {
+                font-size: 4.5rem;
+            }
+        }
+        
+        .gradient-text {
+            display: block;
+            background: linear-gradient(to right, #fde047, #fbcfe8, #c084fc);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+        
+        .hero p {
+            font-size: 1.25rem;
+            margin-bottom: 3rem;
+            color: rgba(241, 245, 249, 0.8);
+            max-width: 48rem;
+            margin-left: auto;
+            margin-right: auto;
+            line-height: 1.75;
+        }
+        
+        @media (min-width: 1024px) {
+            .hero p {
+                font-size: 1.5rem;
+            }
+        }
+        
+        /* Upload Section */
+        .upload-section {
+            position: relative;
+            z-index: 10;
+            padding: 4rem 0;
+        }
+        
+        .upload-section h2 {
+            font-size: 2.25rem;
+            font-weight: 800;
+            text-align: center;
+            margin-bottom: 2.5rem;
+        }
+        
+        .upload-area-container {
+            max-width: 56rem;
+            margin: 0 auto;
+        }
+        
+        .card {
+            background: rgba(161, 179, 189, 0.08);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            border-radius: 16px;
+            padding: 3rem;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+        
+        .upload-card {
+            text-align: center;
+            cursor: pointer;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.3s;
+        }
+        
+        .upload-card:hover {
+            border-color: rgba(139, 92, 246, 0.5);
+        }
+        
+        .upload-card h3 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+        
+        .upload-card p {
+            color: rgba(241, 245, 249, 0.7);
+            margin-bottom: 1.5rem;
+        }
+        
+        .upload-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+        
+        .file-info {
+            margin-top: 2rem;
+        }
+        
+        .preview-container {
+            position: relative;
+            padding: 0.5rem;
+            background: rgba(148, 163, 184, 0.3);
+            border-radius: 0.5rem;
+            margin-bottom: 1rem;
+        }
+        
+        .preview-media {
+            width: 100%;
+            max-height: 24rem;
+            object-fit: contain;
+            border-radius: 0.5rem;
+            display: block;
+            margin: 0 auto;
+        }
+        
+        .close-btn {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: #ef4444;
+            color: white;
+            border: none;
+            border-radius: 9999px;
+            padding: 0.5rem;
+            cursor: pointer;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            transition: background 0.2s;
+        }
+        
+        .close-btn:hover {
+            background: #dc2626;
+        }
+        
+        .file-details {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem;
+            background: rgba(139, 92, 246, 0.1);
+            border: 1px solid rgba(139, 92, 246, 0.2);
+            border-radius: 0.5rem;
+            margin-bottom: 1rem;
+        }
+        
+        .file-name {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-weight: 600;
+        }
+        
+        .file-size {
+            color: #8b5cf6;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+        
+        .error-card {
+            margin-top: 1.5rem;
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.4);
+            border-radius: 1rem;
+            padding: 1rem;
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+        }
+        
+        .error-text {
+            color: #fca5a5;
+            font-weight: 500;
+        }
+        
+        /* Results Section */
+        .results-container {
+            margin-top: 2rem;
+        }
+        
+        .results-preview {
+            margin-bottom: 2rem;
+            padding: 1rem;
+            background: rgba(148, 163, 184, 0.3);
+            border-radius: 1rem;
+        }
+        
+        .results-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        
+        .prediction-title-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+        }
+        
+        .prediction-title {
+            font-size: 2.25rem;
+            font-weight: 800;
+        }
+        
+        .results-metrics {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 2rem;
+            padding: 1rem 0;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            margin-bottom: 1.5rem;
+        }
+        
+        .metric {
+            text-align: center;
+        }
+        
+        .metric-label {
+            font-size: 0.875rem;
+            color: rgba(241, 245, 249, 0.7);
+            margin-bottom: 0.25rem;
+            font-weight: 500;
+        }
+        
+        .metric-value {
+            font-size: 2.25rem;
+            font-weight: 800;
+            color: #8b5cf6;
+        }
+        
+        .risk-badge {
+            padding: 0.375rem 1rem;
+            border-radius: 9999px;
+            font-size: 0.875rem;
+            font-weight: 700;
+            border: 1px solid;
+            box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+        }
+        
+        .risk-low {
+            color: #166534;
+            background: #bbf7d0;
+            border-color: #4ade80;
+        }
+        
+        .risk-medium {
+            color: #854d0e;
+            background: #fef08a;
+            border-color: #facc15;
+        }
+        
+        .risk-high {
+            color: #991b1b;
+            background: #fecaca;
+            border-color: #f87171;
+        }
+        
+        .details-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        @media (min-width: 768px) {
+            .details-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+        
+        .detail-card {
+            background: rgba(148, 163, 184, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 1rem;
+            padding: 1.5rem;
+        }
+        
+        .detail-card h4 {
+            font-weight: 700;
+            font-size: 1.125rem;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.75rem;
+        }
+        
+        .detail-label {
+            color: rgba(241, 245, 249, 0.7);
+        }
+        
+        .detail-value {
+            font-weight: 500;
+        }
+        
+        .risk-factor {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.5rem;
+            margin-bottom: 0.75rem;
+        }
+        
+        .risk-dot {
+            width: 0.375rem;
+            height: 0.375rem;
+            border-radius: 9999px;
+            background: #ef4444;
+            margin-top: 0.5rem;
+            flex-shrink: 0;
+        }
+        
+        .quality-metrics {
+            margin-top: 1.5rem;
+        }
+        
+        .quality-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+            text-align: center;
+        }
+        
+        @media (min-width: 768px) {
+            .quality-grid {
+                grid-template-columns: repeat(4, 1fr);
+            }
+        }
+        
+        .quality-item p:first-child {
+            font-size: 0.875rem;
+            color: rgba(241, 245, 249, 0.7);
+            margin-bottom: 0.25rem;
+        }
+        
+        .quality-item p:last-child {
+            font-weight: 700;
+        }
+        
+        .results-actions {
+            margin-top: 2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+        
+        @media (min-width: 640px) {
+            .results-actions {
+                flex-direction: row;
+            }
+        }
+        
+        .results-actions .btn {
+            flex: 1;
+            justify-content: center;
+        }
+        
+        /* How It Works Section */
+        .how-it-works {
+            position: relative;
+            z-index: 10;
+            padding: 5rem 0;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .how-it-works h2 {
+            font-size: 2.25rem;
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 4rem;
+        }
+        
+        .steps-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 3rem;
+        }
+        
+        @media (min-width: 768px) {
+            .steps-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+        
+        .step {
+            text-align: center;
+        }
+        
+        .step-icon {
+            width: 6rem;
+            height: 6rem;
+            border-radius: 9999px;
+            background: linear-gradient(to bottom right, #8b5cf6, #a855f7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1.5rem;
+            box-shadow: 0 20px 25px -5px rgba(139, 92, 246, 0.5);
+            transition: transform 0.3s;
+        }
+        
+        .step-icon:hover {
+            transform: scale(1.1);
+        }
+        
+        .step-number {
+            background: linear-gradient(to right, #fde047, #fbcfe8);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            font-size: 0.875rem;
+            font-weight: 700;
+            margin-bottom: 0.75rem;
+            letter-spacing: 0.05em;
+        }
+        
+        .step h4 {
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+        }
+        
+        .step p {
+            color: rgba(241, 245, 249, 0.7);
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        input[type="file"] {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+    <nav class="container nav-bar">
+        <div class="logo-area">
+            <i data-lucide="shield" class="logo-icon"></i>
+            <span class="logo-text">DeepGuard<span class="accent">AI</span></span>
+        </div>
+
+        <div class="nav-links">
+            <button class="nav-btn" onclick="scrollToSection('upload-section')">Upload</button>
+            <button class="nav-btn" onclick="scrollToSection('how-it-works')">How It Works</button>
+            <button class="cta-btn" onclick="scrollToSection('upload-section')">Get Started</button>
+        </div>
+
+        <div class="mobile-menu-btn" onclick="toggleMobileMenu()">
+            <i data-lucide="menu" id="menu-icon"></i>
+            <i data-lucide="x" id="close-icon" style="display:none;"></i>
+        </div>
+    </nav>
+
+    <!-- Mobile Menu -->
+    <div class="mobile-menu" id="mobile-menu">
+        <button class="mobile-link" onclick="scrollToSection('upload-section'); toggleMobileMenu()">Upload</button>
+        <button class="mobile-link" onclick="scrollToSection('how-it-works'); toggleMobileMenu()">How It Works</button>
+        <button class="mobile-cta" onclick="scrollToSection('upload-section'); toggleMobileMenu()">Get Started</button>
+        <button class="mobile-link" onclick="logoutUser(); toggleMobileMenu()">Logout</button>
+    </div>
+</header>
+
+    
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="container">
+            <div class="hero-badge glass-effect animate-fade-in animate-pulse-glow">
+                <i data-lucide="zap" style="width: 16px; height: 16px; color: #fde047;"></i>
+                <span>AI-Powered Detection Technology</span>
+            </div>
+            
+            <h1 class="animate-fade-in" style="animation-delay: 0.1s;">
+                Protect Against
+                <span class="gradient-text">Digital Deception</span>
+            </h1>
+            
+            <p class="animate-fade-in" style="animation-delay: 0.2s;">
+                DeepguardAI uses advanced AI and machine learning to detect deepfakes and manipulated media,
+                helping you combat misinformation and enhance digital safety in real-time.
+            </p>
+            
+            <button class="btn btn-white btn-lg animate-fade-in" style="animation-delay: 0.3s;" onclick="scrollToSection('upload-section')">
+                <i data-lucide="shield" style="width: 20px; height: 20px;"></i>
+                Start Detection
+            </button>
+        </div>
+    </section>
+    
+    <!-- Upload Section -->
+    <section id="upload-section" class="upload-section">
+        <div class="container">
+            <div class="upload-area-container">
+                <h2>Analyze Your Media</h2>
+                
+                <!-- Upload Area -->
+                <div id="upload-area" class="card upload-card" ondrop="handleDrop(event)" ondragover="handleDragOver(event)">
+                    <i data-lucide="upload" style="width: 64px; height: 64px; color: #8b5cf6; margin: 0 auto 1.5rem;"></i>
+                    <h3>Drop your media here</h3>
+                    <p>or click the button to browse</p>
+                    <div class="upload-buttons">
+                        <button class="btn btn-primary" onclick="document.getElementById('image-input').click()">
+                            <i data-lucide="image" style="width: 20px; height: 20px;"></i>
+                            Upload Image
+                        </button>
+                        <button class="btn" style="background: #a855f7; color: white;" onclick="document.getElementById('video-input').click()">
+                            <i data-lucide="video" style="width: 20px; height: 20px;"></i>
+                            Upload Video
+                        </button>
+                    </div>
+                    <p style="font-size: 0.875rem; color: rgba(241, 245, 249, 0.6); margin-top: 1rem;">
+                        Supports: JPEG, PNG, GIF, MP4, MOV, WEBM • Max size: 100MB
+                    </p>
+                    <input type="file" id="image-input" accept="image/*" onchange="handleFileSelect(event)">
+                    <input type="file" id="video-input" accept="video/*" onchange="handleFileSelect(event)">
+                </div>
+                
+                <!-- File Preview -->
+                <div id="file-preview" class="card hidden animate-fade-in" style="margin-top: 2rem; padding: 1.5rem;">
+                    <div class="preview-container">
+                        <img id="preview-image" class="preview-media hidden" alt="Preview">
+                        <video id="preview-video" class="preview-media hidden" controls></video>
+                        <button class="close-btn" onclick="resetUpload()">
+                            <i data-lucide="x" style="width: 16px; height: 16px;"></i>
+                        </button>
+                    </div>
+                    <div class="file-details">
+                        <div class="file-name">
+                            <i id="file-icon" data-lucide="image" style="width: 20px; height: 20px; color: #8b5cf6;"></i>
+                            <span id="file-name"></span>
+                        </div>
+                        <span id="file-size" class="file-size"></span>
+                    </div>
+                    <button id="analyze-btn" class="btn btn-primary" style="width: 100%; padding: 1.5rem; font-size: 1.125rem; background: linear-gradient(to right, #8b5cf6, #a855f7);" onclick="analyzeMedia()">
+                        <i data-lucide="shield" style="width: 20px; height: 20px;"></i>
+                        Analyze for Deepfakes
+                    </button>
+                </div>
+                
+                <!-- Error Message -->
+                <div id="error-message" class="error-card hidden">
+                    <i data-lucide="alert-circle" style="width: 24px; height: 24px; color: #ef4444; flex-shrink: 0;"></i>
+                    <p class="error-text" id="error-text"></p>
+                </div>
+                
+                <!-- Results -->
+                <div id="results" class="card results-container hidden animate-fade-in">
+                    <div class="results-preview">
+                        <img id="result-image" class="preview-media hidden" alt="Analyzed Media">
+                        <video id="result-video" class="preview-media hidden" controls></video>
+                    </div>
+                    
+                    <div class="results-header">
+                        <div class="prediction-title-container">
+                            <div id="prediction-icon"></div>
+                            <h3 class="prediction-title" id="prediction-title"></h3>
+                        </div>
+                        
+                        <div class="results-metrics">
+                            <div class="metric">
+                                <p class="metric-label">CONFIDENCE SCORE</p>
+                                <p class="metric-value" id="confidence-score"></p>
+                            </div>
+                            <div class="metric" id="risk-metric" style="display: none;">
+                                <p class="metric-label">RISK LEVEL</p>
+                                <span id="risk-badge" class="risk-badge"></span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="details-grid">
+                        <div class="detail-card">
+                            <h4 style="color: #8b5cf6;">
+                                <i data-lucide="fingerprint" style="width: 20px; height: 20px;"></i>
+                                Detection Details
+                            </h4>
+                            <div class="detail-row">
+                                <span class="detail-label">Faces Detected:</span>
+                                <span class="detail-value" style="color: #60a5fa;" id="face-count"></span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Suspicion Score:</span>
+                                <span class="detail-value" style="color: #f87171;" id="suspicion-score"></span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Model Version:</span>
+                                <span class="detail-value" style="color: #4ade80;">Advanced CV v3.1</span>
+                            </div>
+                        </div>
+                        
+                        <div class="detail-card">
+                            <h4 style="color: #f87171;">
+                                <i data-lucide="alert-triangle" style="width: 20px; height: 20px;"></i>
+                                Risk Factors
+                            </h4>
+                            <div id="risk-factors"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="detail-card quality-metrics" id="quality-metrics" style="display: none;">
+                        <h4 style="color: #facc15;">
+                            <i data-lucide="bar-chart-3" style="width: 20px; height: 20px;"></i>
+                            Media Quality Analysis
+                        </h4>
+                        <div class="quality-grid">
+                            <div class="quality-item">
+                                <p>Blur Score</p>
+                                <p style="color: #60a5fa;" id="blur-score"></p>
+                            </div>
+                            <div class="quality-item">
+                                <p>Brightness</p>
+                                <p style="color: #facc15;" id="brightness"></p>
+                            </div>
+                            <div class="quality-item">
+                                <p>Edge Density</p>
+                                <p style="color: #4ade80;" id="edge-density"></p>
+                            </div>
+                            <div class="quality-item">
+                                <p>Contrast</p>
+                                <p style="color: #c084fc;" id="contrast"></p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="results-actions">
+                        <button class="btn btn-primary" onclick="resetUpload()">Analyze Another File</button>
+                        <button class="btn btn-secondary">Download Report</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- How It Works Section -->
+    <section id="how-it-works" class="how-it-works">
+        <div class="container">
+            <h2>How DeepguardAI Works</h2>
+            
+            <div class="steps-grid">
+                <div class="step animate-fade-in">
+                    <div class="step-icon">
+                        <i data-lucide="upload" style="width: 48px; height: 48px; color: white;"></i>
+                    </div>
+                    <div class="step-number">STEP 01</div>
+                    <h4>Upload & Process</h4>
+                    <p>Securely upload your media file. Our system immediately begins preprocessing and quality analysis to prepare for AI detection.</p>
+                </div>
+                
+                <div class="step animate-fade-in" style="animation-delay: 0.15s;">
+                    <div class="step-icon">
+                        <i data-lucide="brain" style="width: 48px; height: 48px; color: white;"></i>
+                    </div>
+                    <div class="step-number">STEP 02</div>
+                    <h4>AI Analysis</h4>
+                    <p>Advanced machine learning models scan for subtle manipulation signs, including facial glitches and compression inconsistencies.</p>
+                </div>
+                
+                <div class="step animate-fade-in" style="animation-delay: 0.3s;">
+                    <div class="step-icon">
+                        <i data-lucide="file-check" style="width: 48px; height: 48px; color: white;"></i>
+                    </div>
+                    <div class="step-number">STEP 03</div>
+                    <h4>Results & Report</h4>
+                    <p>Receive detailed results with a clear prediction, confidence scores, and a comprehensive risk assessment report.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <script>
+        // Initialize Lucide icons
+        lucide.createIcons();
+        
+        // Global state
+        let selectedFile = null;
+        let fileType = null;
+        let previewUrl = null;
+        
+        // Utility functions
+        function scrollToSection(id) {
+            const element = document.getElementById(id);
+            if (element) {
+                element.scrollIntoView({ behavior: 'smooth' });
+            }
+        }
+        
+        function toggleMobileMenu() {
+            const menu = document.getElementById('mobile-menu');
+            const menuIcon = document.getElementById('menu-icon');
+            const closeIcon = document.getElementById('close-icon');
+            
+            menu.classList.toggle('active');
+            
+            if (menu.classList.contains('active')) {
+                menuIcon.style.display = 'none';
+                closeIcon.style.display = 'block';
+            } else {
+                menuIcon.style.display = 'block';
+                closeIcon.style.display = 'none';
+            }
+            
+            lucide.createIcons();
+        }
+        
+        function handleDragOver(e) {
+            e.preventDefault();
+        }
+        
+        function handleDrop(e) {
+            e.preventDefault();
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                processFile(files[0]);
+            }
+        }
+        
+        function handleFileSelect(e) {
+            const file = e.target.files[0];
+            if (file) {
+                processFile(file);
+            }
+        }
+        
+        function processFile(file) {
+            const MAX_FILE_SIZE = 100 * 1024 * 1024; // 100MB
+            
+            // Hide error
+            document.getElementById('error-message').classList.add('hidden');
+            document.getElementById('results').classList.add('hidden');
+            
+            // Validate file type
+            if (!file.type.startsWith('image') && !file.type.startsWith('video')) {
+                showError('Please select a valid image or video file.');
+                return;
+            }
+            
+            // Validate file size
+            if (file.size > MAX_FILE_SIZE) {
+                showError('File size must be less than 100MB');
+                return;
+            }
+            
+            selectedFile = file;
+            fileType = file.type.startsWith('image') ? 'image' : 'video';
+            previewUrl = URL.createObjectURL(file);
+            
+            // Update UI
+            document.getElementById('upload-area').classList.add('hidden');
+            document.getElementById('file-preview').classList.remove('hidden');
+            
+            // Update file info
+            document.getElementById('file-name').textContent = file.name;
+            document.getElementById('file-size').textContent = (file.size / 1024 / 1024).toFixed(2) + ' MB';
+            
+            // Update icon
+            const fileIcon = document.getElementById('file-icon');
+            fileIcon.setAttribute('data-lucide', fileType === 'image' ? 'image' : 'video');
+            
+            // Show preview
+            if (fileType === 'image') {
+                document.getElementById('preview-image').src = previewUrl;
+                document.getElementById('preview-image').classList.remove('hidden');
+                document.getElementById('preview-video').classList.add('hidden');
+            } else {
+                document.getElementById('preview-video').src = previewUrl;
+                document.getElementById('preview-video').classList.remove('hidden');
+                document.getElementById('preview-image').classList.add('hidden');
+            }
+            
+            lucide.createIcons();
+        }
+        
+        function showError(message) {
+            document.getElementById('error-text').textContent = message;
+            document.getElementById('error-message').classList.remove('hidden');
+            lucide.createIcons();
+        }
+        
+        function resetUpload() {
+            selectedFile = null;
+            fileType = null;
+            previewUrl = null;
+            
+            document.getElementById('upload-area').classList.remove('hidden');
+            document.getElementById('file-preview').classList.add('hidden');
+            document.getElementById('results').classList.add('hidden');
+            document.getElementById('error-message').classList.add('hidden');
+            
+            document.getElementById('image-input').value = '';
+            document.getElementById('video-input').value = '';
+            
+            lucide.createIcons();
+        }
+        
+        async function analyzeMedia() {
+            if (!selectedFile) return;
+
+            const analyzeBtn = document.getElementById('analyze-btn');
+            analyzeBtn.disabled = true;
+            analyzeBtn.innerHTML = '<i data-lucide="loader-2" style="width: 20px; height: 20px;" class="animate-spin"></i> Analyzing...';
+            lucide.createIcons();
+
+            // Hide error and results
+            document.getElementById('error-message').classList.add('hidden');
+            document.getElementById('results').classList.add('hidden');
+
+            try {
+                // Get Firebase ID token
+                const user = auth.currentUser;
+                if (!user) {
+                    showError('Please log in to analyze media.');
+                    analyzeBtn.disabled = false;
+                    analyzeBtn.innerHTML = '<i data-lucide="shield" style="width: 20px; height: 20px;"></i> Analyze for Deepfakes';
+                    lucide.createIcons();
+                    return;
+                }
+
+                const token = await user.getIdToken();
+
+                // Prepare form data
+                const formData = new FormData();
+                formData.append('image', selectedFile);
+
+                // Send to backend
+                const response = await fetch('/upload', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.message || 'Analysis failed');
+                }
+
+                const result = await response.json();
+                displayResults(result);
+
+            } catch (error) {
+                console.error('Analysis error:', error);
+                showError(error.message || 'Failed to analyze media. Please try again.');
+                analyzeBtn.disabled = false;
+                analyzeBtn.innerHTML = '<i data-lucide="shield" style="width: 20px; height: 20px;"></i> Analyze for Deepfakes';
+                lucide.createIcons();
+            }
+        }
+        
+        function displayResults(results) {
+            // Hide preview, show results
+            document.getElementById('file-preview').classList.add('hidden');
+            document.getElementById('results').classList.remove('hidden');
+            
+            // Show media preview in results
+            if (fileType === 'image') {
+                document.getElementById('result-image').src = previewUrl;
+                document.getElementById('result-image').classList.remove('hidden');
+                document.getElementById('result-video').classList.add('hidden');
+            } else {
+                document.getElementById('result-video').src = previewUrl;
+                document.getElementById('result-video').classList.remove('hidden');
+                document.getElementById('result-image').classList.add('hidden');
+            }
+            
+            // Update prediction
+            const predictionIcon = document.getElementById('prediction-icon');
+            const predictionTitle = document.getElementById('prediction-title');
+            
+            if (results.prediction === 'REAL') {
+                predictionIcon.innerHTML = '<i data-lucide="check-circle" style="width: 32px; height: 32px; color: #22c55e;"></i>';
+                predictionTitle.textContent = 'Authentic Media';
+            } else if (results.prediction === 'FAKE') {
+                predictionIcon.innerHTML = '<i data-lucide="x-circle" style="width: 32px; height: 32px; color: #ef4444;"></i>';
+                predictionTitle.textContent = 'Deepfake Detected';
+            } else {
+                predictionIcon.innerHTML = '<i data-lucide="alert-circle" style="width: 32px; height: 32px; color: #facc15;"></i>';
+                predictionTitle.textContent = 'Suspicious Content';
+            }
+            
+            // Update metrics
+            document.getElementById('confidence-score').textContent = (results.confidence * 100).toFixed(1) + '%';
+            
+            if (results.risk_level) {
+                document.getElementById('risk-metric').style.display = 'block';
+                const riskBadge = document.getElementById('risk-badge');
+                riskBadge.textContent = results.risk_level.toUpperCase();
+                riskBadge.className = 'risk-badge risk-' + results.risk_level;
+            }
+            
+            // Update details
+            document.getElementById('face-count').textContent = results.face_count || 0;
+            document.getElementById('suspicion-score').textContent = (results.suspicion_score * 100).toFixed(1) + '%';
+            
+            // Update risk factors
+            const riskFactorsContainer = document.getElementById('risk-factors');
+            riskFactorsContainer.innerHTML = '';
+            if (results.risk_factors && results.risk_factors.length > 0) {
+                results.risk_factors.forEach(factor => {
+                    const div = document.createElement('div');
+                    div.className = 'risk-factor';
+                    div.innerHTML = `
+                        <div class="risk-dot"></div>
+                        <span style="font-size: 0.875rem; color: rgba(241, 245, 249, 0.7);">${factor}</span>
+                    `;
+                    riskFactorsContainer.appendChild(div);
+                });
+            } else {
+                riskFactorsContainer.innerHTML = '<p style="font-size: 0.875rem; color: rgba(241, 245, 249, 0.7);">No significant risk factors detected</p>';
+            }
+            
+            // Update quality metrics
+            if (results.quality_metrics) {
+                document.getElementById('quality-metrics').style.display = 'block';
+                document.getElementById('blur-score').textContent = results.quality_metrics.blur_score.toFixed(1);
+                document.getElementById('brightness').textContent = results.quality_metrics.mean_brightness.toFixed(1);
+                document.getElementById('edge-density').textContent = (results.quality_metrics.edge_density * 100).toFixed(1) + '%';
+                document.getElementById('contrast').textContent = results.quality_metrics.brightness_std.toFixed(1);
+            }
+            
+            lucide.createIcons();
+            
+            // Scroll to results
+            document.getElementById('results').scrollIntoView({ behavior: 'smooth' });
+        }
+        
+        function logoutUser() {
+            // Sign out from Firebase
+            firebase.auth().signOut().then(() => {
+                // Redirect to login page
+                window.location.href = '/login';
+            }).catch((error) => {
+                console.error('Logout error:', error);
+                // Force redirect even if logout fails
+                window.location.href = '/login';
+            });
+        }
+
+        // Initialize icons on load
+        window.addEventListener('load', () => {
+            lucide.createIcons();
+        });
+
+        // Check authentication state and redirect if not logged in
+        auth.onAuthStateChanged((user) => {
+            if (!user) {
+                window.location.href = '/login';
+            }
+        });
+    </script>
+</body>
+</html>
