@@ -24,30 +24,43 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
 
+    <!-- Modern Typography -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
     <!-- Auth Script -->
     <script src="/static/auth.js"></script>
     
     <style>
+        :root {
+            --primary: #8b5cf6;
+            --primary-hover: #7c3aed;
+            --secondary: #0ea5e9;
+            --bg-dark: #0f1117;
+            --glass-bg: rgba(255, 255, 255, 0.03);
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --danger: #ef4444;
+            --success: #22c55e;
+            --warning: #facc15;
+        }
+
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
+            font-family: 'Outfit', sans-serif;
         }
         
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-            color: #f1f5f9;
-            background: linear-gradient(-45deg, #1e3c72, #2a5298, #8e2de2, #4a00e0);
-            background-size: 400% 400%;
-            animation: gradientShift 15s ease infinite;
+            color: var(--text-main);
+            background-color: var(--bg-dark);
+            background-image: 
+                radial-gradient(circle at 15% 50%, rgba(139, 92, 246, 0.15), transparent 25%),
+                radial-gradient(circle at 85% 30%, rgba(14, 165, 233, 0.15), transparent 25%);
+            background-attachment: fixed;
             min-height: 100vh;
             overflow-x: hidden;
-        }
-        
-        @keyframes gradientShift {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
         }
         
         @keyframes fadeIn {
@@ -63,10 +76,10 @@
         
         @keyframes pulse {
             0%, 100% {
-                box-shadow: 0 0 20px rgba(168, 85, 247, 0.4);
+                box-shadow: 0 0 20px rgba(139, 92, 246, 0.4);
             }
             50% {
-                box-shadow: 0 0 30px rgba(168, 85, 247, 0.7);
+                box-shadow: 0 0 30px rgba(139, 92, 246, 0.7);
             }
         }
         
@@ -81,10 +94,10 @@
         }
         
         .glass-effect {
-            background: rgba(161, 179, 189, 0.08);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.18);
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
             border-radius: 16px;
         }
         
@@ -106,23 +119,17 @@
             top: 0;
             width: 100%;
             z-index: 50;
-            backdrop-filter: blur(18px);
-            background: rgba(22, 22, 36, 0.65);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.35);
+            backdrop-filter: blur(20px);
+            background: rgba(15, 17, 23, 0.7);
+            border-bottom: 1px solid var(--glass-border);
             transition: all 0.3s ease;
         }
         header:hover{
-            backdrop-filter: blur(22px);
-            background: rgba(22, 22, 36, 0.85);
+            background: rgba(15, 17, 23, 0.9);
         }
         .header {
             width: 100%;
-            background: linear-gradient(90deg, #14162e, #1e1b4b);
             padding: 12px 0;
-            backdrop-filter: blur(12px);
-            border-bottom: 1px solid rgba(255,255,255,0.06);
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
         }
         nav {
             padding: 1rem 0;
@@ -156,30 +163,37 @@
             filter: brightness(0 0 6px rgba(168,85,247,0.6));
         }
         
-        .logo {
+        .logo-area {
             display: flex;
             align-items: center;
             gap: 0.75rem;
-            transition: transform 0.3s;
+            transition: transform 0.3s ease;
             cursor: pointer;
+            text-decoration: none;
         }
         
-        .logo:hover {
+        .logo-area:hover {
             transform: scale(1.05);
         }
         
         .logo-text {
             font-size: 1.5rem;
             font-weight: 700;
-            background: linear-gradient(to right, #60a5fa, #a855f7);
+            background: linear-gradient(to right, #fff, #cbd5e1);
             -webkit-background-clip: text;
             background-clip: text;
             color: transparent;
         }
+        .logo-text .accent {
+            color: var(--primary);
+            background: none;
+            -webkit-background-clip: initial;
+            background-clip: initial;
+        }
         .nav-bar{
-            width: 100;
+            width: 100%;
             display: flex;
-            justify-content: flex;
+            justify-content: space-between;
             align-items: center;
         }
         
@@ -189,7 +203,6 @@
             align-items: center;
             margin-left: auto;
         }
-
         
         @media (min-width: 768px) {
             .nav-links {
@@ -197,18 +210,64 @@
             }
         }
         
-        .nav-link {
-            color: rgba(241, 245, 249, 0.9);
-            font-weight: 500;
+        .nav-btn {
+            padding: 0.5rem 1.25rem;
+            border-radius: 8px;
+            font-weight: 600;
             cursor: pointer;
-            transition: color 0.2s;
-            background: none;
-            border: none;
-            font-size: 1rem;
+            transition: all 0.3s ease;
+            background: transparent;
+            border: 1px solid transparent;
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
         }
         
-        .nav-link:hover {
-            color: #f1f5f9;
+        .nav-btn::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(14, 165, 233, 0.1));
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            z-index: 0;
+        }
+
+        .nav-btn:hover::before {
+            opacity: 1;
+        }
+        
+        .nav-btn i, .nav-btn span {
+            z-index: 1;
+            position: relative;
+        }
+        
+        .nav-btn:hover {
+            color: var(--text-main);
+            border-color: rgba(139, 92, 246, 0.3);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(139, 92, 246, 0.15);
+        }
+
+        .cta-btn {
+            padding: 0.5rem 1.5rem;
+            border-radius: 9999px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: none;
+            background: linear-gradient(135deg, var(--primary), #6366f1);
+            color: white;
+            font-size: 1rem;
+        }
+
+        .cta-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px -10px rgba(139, 92, 246, 0.6);
         }
         
         .btn {
@@ -220,47 +279,53 @@
             border: none;
             display: inline-flex;
             align-items: center;
+            justify-content: center;
             gap: 0.5rem;
             font-size: 1rem;
+            position: relative;
+            overflow: hidden;
         }
         
         .btn-primary {
-            background: #8b5cf6;
+            background: linear-gradient(135deg, var(--primary), #6366f1);
             color: white;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
         }
         
         .btn-primary:hover {
-            background: #7c3aed;
-            box-shadow: 0 0 20px rgba(139, 92, 246, 0.5);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px -10px rgba(139, 92, 246, 0.6);
         }
         
         .btn-white {
-            background: white;
-            color: #8b5cf6;
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+            background: var(--glass-bg);
+            color: white;
+            border: 1px solid var(--glass-border);
+            backdrop-filter: blur(10px);
         }
         
         .btn-white:hover {
-            background: rgba(255, 255, 255, 0.9);
-            transform: scale(1.05);
-            box-shadow: 0 0 20px rgba(139, 92, 246, 0.5);
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateY(-2px);
+            border-color: rgba(255, 255, 255, 0.3);
+            box-shadow: 0 10px 20px -10px rgba(255, 255, 255, 0.2);
         }
         
         .btn-secondary {
             background: rgba(30, 41, 59, 0.8);
-            color: rgb(0, 6, 92);
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            color: white;
+            border: 1px solid var(--glass-border);
         }
         
         .btn-secondary:hover {
             background: rgba(30, 41, 59, 0.9);
-            transform: scale(1.02);
+            transform: translateY(-2px);
         }
         
         .btn:disabled {
             opacity: 0.5;
             cursor: not-allowed;
+            transform: none !important;
+            box-shadow: none !important;
         }
         
         .btn-lg {
@@ -286,20 +351,47 @@
         .mobile-menu {
             display: none;
             margin-top: 1rem;
-            padding-bottom: 1rem;
-            border-top: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 1rem 0;
+            border-top: 1px solid var(--glass-border);
             animation: fadeIn 0.3s ease-out;
+            background: rgba(15, 17, 23, 0.95);
+            border-radius: 0 0 16px 16px;
         }
         
         .mobile-menu.active {
-            display: block;
-        }
-        
-        .mobile-menu-links {
             display: flex;
             flex-direction: column;
             gap: 0.75rem;
-            padding-top: 1rem;
+        }
+        
+        .mobile-link {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 1rem;
+            font-weight: 500;
+            padding: 0.75rem 1.5rem;
+            text-align: left;
+            cursor: pointer;
+            transition: color 0.2s, background 0.2s;
+        }
+
+        .mobile-link:hover {
+            color: var(--text-main);
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .mobile-cta {
+            background: linear-gradient(135deg, var(--primary), #6366f1);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            padding: 0.75rem 1.5rem;
+            margin: 0 1.5rem;
+            cursor: pointer;
+            text-align: center;
         }
         
         /* Hero Section */
@@ -386,33 +478,40 @@
         }
         
         .card {
-            background: rgba(161, 179, 189, 0.08);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.18);
-            border-radius: 16px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
             padding: 3rem;
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            position: relative;
+            overflow: hidden;
         }
         
         .upload-card {
             text-align: center;
             cursor: pointer;
-            border: 2px solid rgba(255, 255, 255, 0.2);
-            transition: all 0.3s;
+            border: 2px dashed rgba(139, 92, 246, 0.3);
+            transition: all 0.3s ease;
+            background: rgba(15, 23, 42, 0.4);
         }
         
         .upload-card:hover {
-            border-color: rgba(139, 92, 246, 0.5);
+            border-color: var(--primary);
+            background: rgba(139, 92, 246, 0.05);
+            transform: translateY(-5px);
         }
         
         .upload-card h3 {
             font-size: 1.5rem;
             font-weight: 700;
             margin-bottom: 0.5rem;
+            color: var(--text-main);
         }
         
         .upload-card p {
-            color: rgba(241, 245, 249, 0.7);
+            color: var(--text-muted);
             margin-bottom: 1.5rem;
         }
         
@@ -430,9 +529,10 @@
         .preview-container {
             position: relative;
             padding: 0.5rem;
-            background: rgba(148, 163, 184, 0.3);
-            border-radius: 0.5rem;
+            background: rgba(15, 23, 42, 0.4);
+            border-radius: 12px;
             margin-bottom: 1rem;
+            border: 1px solid var(--glass-border);
         }
         
         .preview-media {
@@ -467,9 +567,9 @@
             justify-content: space-between;
             align-items: center;
             padding: 1rem;
-            background: rgba(139, 92, 246, 0.1);
-            border: 1px solid rgba(139, 92, 246, 0.2);
-            border-radius: 0.5rem;
+            background: rgba(15, 23, 42, 0.4);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
             margin-bottom: 1rem;
         }
         
@@ -509,9 +609,10 @@
         
         .results-preview {
             margin-bottom: 2rem;
-            padding: 1rem;
-            background: rgba(148, 163, 184, 0.3);
-            border-radius: 1rem;
+            padding: 0.5rem;
+            background: rgba(15, 23, 42, 0.4);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
         }
         
         .results-header {
@@ -538,8 +639,8 @@
             justify-content: center;
             gap: 2rem;
             padding: 1rem 0;
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            border-top: 1px solid var(--glass-border);
+            border-bottom: 1px solid var(--glass-border);
             margin-bottom: 1.5rem;
         }
         
@@ -601,10 +702,17 @@
         }
         
         .detail-card {
-            background: rgba(148, 163, 184, 0.3);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(15, 23, 42, 0.4);
+            border: 1px solid var(--glass-border);
             border-radius: 1rem;
             padding: 1.5rem;
+            transition: all 0.3s ease;
+        }
+        
+        .detail-card:hover {
+            border-color: rgba(139, 92, 246, 0.3);
+            background: rgba(15, 23, 42, 0.6);
+            transform: translateY(-2px);
         }
         
         .detail-card h4 {
@@ -779,9 +887,18 @@
         </div>
 
         <div class="nav-links">
-            <button class="nav-btn" onclick="scrollToSection('upload-section')">Upload</button>
-            <button class="nav-btn" onclick="scrollToSection('how-it-works')">How It Works</button>
-            <button class="cta-btn" onclick="scrollToSection('upload-section')">Get Started</button>
+            <a href="/detect-ai" class="nav-btn" style="text-decoration: none;">
+                <i data-lucide="image" style="width:16px;height:16px;margin-right:6px;"></i> Image Detector
+            </a>
+            <a href="/detect-ai-video" class="nav-btn" style="text-decoration: none;">
+                <i data-lucide="video" style="width:16px;height:16px;margin-right:6px;"></i> Video Detector
+            </a>
+            <button class="nav-btn" onclick="scrollToSection('how-it-works')">
+                <i data-lucide="info" style="width:16px;height:16px;margin-right:6px;"></i> How It Works
+            </button>
+            <button class="nav-btn" onclick="logoutUser()" style="background: rgba(239, 68, 68, 0.1); border-color: rgba(239, 68, 68, 0.3); color: #fca5a5;">
+                <i data-lucide="log-out" style="width:16px;height:16px;margin-right:6px;"></i> Logout
+            </button>
         </div>
 
         <div class="mobile-menu-btn" onclick="toggleMobileMenu()">
@@ -792,7 +909,8 @@
 
     <!-- Mobile Menu -->
     <div class="mobile-menu" id="mobile-menu">
-        <button class="mobile-link" onclick="scrollToSection('upload-section'); toggleMobileMenu()">Upload</button>
+        <a href="/detect-ai" class="mobile-link" style="text-decoration: none;">Image Detector</a>
+        <a href="/detect-ai-video" class="mobile-link" style="text-decoration: none;">Video Detector</a>
         <button class="mobile-link" onclick="scrollToSection('how-it-works'); toggleMobileMenu()">How It Works</button>
         <button class="mobile-cta" onclick="scrollToSection('upload-section'); toggleMobileMenu()">Get Started</button>
         <button class="mobile-link" onclick="logoutUser(); toggleMobileMenu()">Logout</button>
@@ -826,145 +944,26 @@
     </section>
     
     <!-- Upload Section -->
+        <!-- Detector Cards Section -->
     <section id="upload-section" class="upload-section">
         <div class="container">
-            <div class="upload-area-container">
-                <h2>Analyze Your Media</h2>
+            <h2>Choose Your Detection Tool</h2>
+            <div style="display: flex; gap: 2rem; justify-content: center; flex-wrap: wrap; margin-top: 3rem;">
                 
-                <!-- Upload Area -->
-                <div id="upload-area" class="card upload-card" ondrop="handleDrop(event)" ondragover="handleDragOver(event)">
-                    <i data-lucide="upload" style="width: 64px; height: 64px; color: #8b5cf6; margin: 0 auto 1.5rem;"></i>
-                    <h3>Drop your media here</h3>
-                    <p>or click the button to browse</p>
-                    <div class="upload-buttons">
-                        <button class="btn btn-primary" onclick="document.getElementById('image-input').click()">
-                            <i data-lucide="image" style="width: 20px; height: 20px;"></i>
-                            Upload Image
-                        </button>
-                        <button class="btn" style="background: #a855f7; color: white;" onclick="document.getElementById('video-input').click()">
-                            <i data-lucide="video" style="width: 20px; height: 20px;"></i>
-                            Upload Video
-                        </button>
-                    </div>
-                    <p style="font-size: 0.875rem; color: rgba(241, 245, 249, 0.6); margin-top: 1rem;">
-                        Supports: JPEG, PNG, GIF, MP4, MOV, WEBM • Max size: 100MB
-                    </p>
-                    <input type="file" id="image-input" accept="image/*" onchange="handleFileSelect(event)">
-                    <input type="file" id="video-input" accept="video/*" onchange="handleFileSelect(event)">
+                <div class="card" style="flex: 1; min-width: 300px; text-align: center; cursor: pointer; transition: transform 0.3s;" onclick="window.location.href='/detect-ai'">
+                    <i data-lucide="image" style="width: 64px; height: 64px; color: #8b5cf6; margin: 0 auto 1.5rem;"></i>
+                    <h3 style="font-size: 1.75rem; margin-bottom: 1rem;">AI Image Detector</h3>
+                    <p style="color: #94a3b8; margin-bottom: 2rem;">Detect AI-generated images and deepfakes using our advanced computer vision model.</p>
+                    <button class="btn btn-primary" style="width: 100%;">Scan Image</button>
                 </div>
                 
-                <!-- File Preview -->
-                <div id="file-preview" class="card hidden animate-fade-in" style="margin-top: 2rem; padding: 1.5rem;">
-                    <div class="preview-container">
-                        <img id="preview-image" class="preview-media hidden" alt="Preview">
-                        <video id="preview-video" class="preview-media hidden" controls></video>
-                        <button class="close-btn" onclick="resetUpload()">
-                            <i data-lucide="x" style="width: 16px; height: 16px;"></i>
-                        </button>
-                    </div>
-                    <div class="file-details">
-                        <div class="file-name">
-                            <i id="file-icon" data-lucide="image" style="width: 20px; height: 20px; color: #8b5cf6;"></i>
-                            <span id="file-name"></span>
-                        </div>
-                        <span id="file-size" class="file-size"></span>
-                    </div>
-                    <button id="analyze-btn" class="btn btn-primary" style="width: 100%; padding: 1.5rem; font-size: 1.125rem; background: linear-gradient(to right, #8b5cf6, #a855f7);" onclick="analyzeMedia()">
-                        <i data-lucide="shield" style="width: 20px; height: 20px;"></i>
-                        Analyze for Deepfakes
-                    </button>
+                <div class="card" style="flex: 1; min-width: 300px; text-align: center; cursor: pointer; transition: transform 0.3s;" onclick="window.location.href='/detect-ai-video'">
+                    <i data-lucide="video" style="width: 64px; height: 64px; color: #0ea5e9; margin: 0 auto 1.5rem;"></i>
+                    <h3 style="font-size: 1.75rem; margin-bottom: 1rem;">AI Video Detector</h3>
+                    <p style="color: #94a3b8; margin-bottom: 2rem;">Analyze videos frame-by-frame to identify synthetic content and face-swaps.</p>
+                    <button class="btn btn-primary" style="width: 100%; background: linear-gradient(135deg, #0ea5e9, #3b82f6);">Scan Video</button>
                 </div>
                 
-                <!-- Error Message -->
-                <div id="error-message" class="error-card hidden">
-                    <i data-lucide="alert-circle" style="width: 24px; height: 24px; color: #ef4444; flex-shrink: 0;"></i>
-                    <p class="error-text" id="error-text"></p>
-                </div>
-                
-                <!-- Results -->
-                <div id="results" class="card results-container hidden animate-fade-in">
-                    <div class="results-preview">
-                        <img id="result-image" class="preview-media hidden" alt="Analyzed Media">
-                        <video id="result-video" class="preview-media hidden" controls></video>
-                    </div>
-                    
-                    <div class="results-header">
-                        <div class="prediction-title-container">
-                            <div id="prediction-icon"></div>
-                            <h3 class="prediction-title" id="prediction-title"></h3>
-                        </div>
-                        
-                        <div class="results-metrics">
-                            <div class="metric">
-                                <p class="metric-label">CONFIDENCE SCORE</p>
-                                <p class="metric-value" id="confidence-score"></p>
-                            </div>
-                            <div class="metric" id="risk-metric" style="display: none;">
-                                <p class="metric-label">RISK LEVEL</p>
-                                <span id="risk-badge" class="risk-badge"></span>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="details-grid">
-                        <div class="detail-card">
-                            <h4 style="color: #8b5cf6;">
-                                <i data-lucide="fingerprint" style="width: 20px; height: 20px;"></i>
-                                Detection Details
-                            </h4>
-                            <div class="detail-row">
-                                <span class="detail-label">Faces Detected:</span>
-                                <span class="detail-value" style="color: #60a5fa;" id="face-count"></span>
-                            </div>
-                            <div class="detail-row">
-                                <span class="detail-label">Suspicion Score:</span>
-                                <span class="detail-value" style="color: #f87171;" id="suspicion-score"></span>
-                            </div>
-                            <div class="detail-row">
-                                <span class="detail-label">Model Version:</span>
-                                <span class="detail-value" style="color: #4ade80;">Advanced CV v3.1</span>
-                            </div>
-                        </div>
-                        
-                        <div class="detail-card">
-                            <h4 style="color: #f87171;">
-                                <i data-lucide="alert-triangle" style="width: 20px; height: 20px;"></i>
-                                Risk Factors
-                            </h4>
-                            <div id="risk-factors"></div>
-                        </div>
-                    </div>
-                    
-                    <div class="detail-card quality-metrics" id="quality-metrics" style="display: none;">
-                        <h4 style="color: #facc15;">
-                            <i data-lucide="bar-chart-3" style="width: 20px; height: 20px;"></i>
-                            Media Quality Analysis
-                        </h4>
-                        <div class="quality-grid">
-                            <div class="quality-item">
-                                <p>Blur Score</p>
-                                <p style="color: #60a5fa;" id="blur-score"></p>
-                            </div>
-                            <div class="quality-item">
-                                <p>Brightness</p>
-                                <p style="color: #facc15;" id="brightness"></p>
-                            </div>
-                            <div class="quality-item">
-                                <p>Edge Density</p>
-                                <p style="color: #4ade80;" id="edge-density"></p>
-                            </div>
-                            <div class="quality-item">
-                                <p>Contrast</p>
-                                <p style="color: #c084fc;" id="contrast"></p>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="results-actions">
-                        <button class="btn btn-primary" onclick="resetUpload()">Analyze Another File</button>
-                        <button class="btn btn-secondary">Download Report</button>
-                    </div>
-                </div>
             </div>
         </div>
     </section>

@@ -1,109 +1,486 @@
-<!doctype html>
-<html>
-
+<!DOCTYPE html>
+<html lang="en">
 <head>
-  <meta charset="utf-8">
-  <title>Video Result - Deepfake Detector</title>
-  <style>
-    body {
-      font-family: "Segoe UI", Roboto, sans-serif;
-      background: linear-gradient(135deg, #2575fc, #6a11cb);
-      display: flex;
-      justify-content: center;
-      align-items: flex-start;
-      padding: 40px;
-      min-height: 100vh;
-      margin: 0;
-      color: #333;
-    }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DeepGuard AI | Video Analysis Result</title>
+    <meta name="description" content="DeepGuard AI video deepfake analysis — frame-by-frame breakdown, suspicious frame highlighting, and temporal analytics.">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --primary: #8b5cf6;
+            --secondary: #0ea5e9;
+            --bg-dark: #0a0d14;
+            --card-bg: rgba(255,255,255,.04);
+            --glass-border: rgba(255,255,255,.09);
+            --text-main: #f1f5f9;
+            --text-muted: #94a3b8;
+            --danger: #ef4444;
+            --success: #22c55e;
+            --warning: #f59e0b;
+            --radius-xl: 24px;
+        }
 
-    .container {
-      background: #fff;
-      padding: 40px;
-      border-radius: 16px;
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-      width: 100%;
-      max-width: 700px;
-      text-align: center;
-    }
+        * { margin:0; padding:0; box-sizing:border-box; font-family:'Outfit',sans-serif; }
 
-    h1 {
-      color: #222;
-      margin-bottom: 24px;
-    }
+        body {
+            background: var(--bg-dark);
+            background-image:
+                radial-gradient(circle at 10% 20%, rgba(139,92,246,.18) 0%, transparent 40%),
+                radial-gradient(circle at 90% 80%, rgba(14,165,233,.14) 0%, transparent 40%);
+            min-height: 100vh;
+            color: var(--text-main);
+            padding: 2rem 1rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
 
-    video {
-      max-width: 100%;
-      border-radius: 12px;
-      margin-bottom: 16px;
-    }
+        .nav {
+            width: 100%; max-width: 960px;
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 2rem;
+        }
+        .brand {
+            font-size: 1.25rem; font-weight: 800;
+            background: linear-gradient(135deg,#8b5cf6,#0ea5e9);
+            -webkit-background-clip: text; background-clip: text; color: transparent;
+        }
+        .btn-back {
+            display: inline-flex; align-items: center; gap:.5rem;
+            padding:.6rem 1.4rem; background: linear-gradient(135deg,var(--primary),#6366f1);
+            color:#fff; text-decoration:none; border-radius:9999px;
+            font-weight:600; font-size:.9rem; transition: all .3s;
+        }
+        .btn-back:hover { transform:translateY(-2px); box-shadow:0 8px 20px -8px rgba(139,92,246,.7); }
 
-    .label {
-      font-size: 20px;
-      font-weight: bold;
-    }
+        .result-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(24px);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-xl);
+            padding: 2.5rem;
+            max-width: 960px; width: 100%;
+            box-shadow: 0 30px 60px -20px rgba(0,0,0,.6);
+            animation: cardIn .5s cubic-bezier(.2,.8,.2,1);
+        }
+        @keyframes cardIn {
+            from { opacity:0; transform:translateY(24px) scale(.97); }
+            to   { opacity:1; transform:none; }
+        }
 
-    .real {
-      color: #1cc88a;
-    }
+        .result-title {
+            font-size: 1.9rem; font-weight: 800;
+            background: linear-gradient(to right,#fff,#cbd5e1);
+            -webkit-background-clip: text; background-clip: text; color: transparent;
+            margin-bottom: .3rem;
+        }
+        .result-subtitle { color:var(--text-muted); font-size:.95rem; margin-bottom:2rem; }
 
-    .fake {
-      color: #e74a3b;
-    }
+        /* VERDICT */
+        .verdict-banner {
+            display: flex; align-items: center; justify-content: center; gap:1rem;
+            padding: 1.5rem; border-radius: 16px; margin-bottom:2rem;
+            font-size:2rem; font-weight:800; letter-spacing:.04em; text-transform:uppercase;
+            animation: pulseIn .6s ease;
+        }
+        @keyframes pulseIn { from{transform:scale(.9);opacity:0} to{transform:scale(1);opacity:1} }
 
-    a {
-      color: #2575fc;
-      text-decoration: none;
-      font-weight: 600;
-    }
+        .verdict-banner.real       { background:rgba(34,197,94,.12);  border:1.5px solid rgba(34,197,94,.4);  color:var(--success); }
+        .verdict-banner.fake       { background:rgba(239,68,68,.12);  border:1.5px solid rgba(239,68,68,.4);  color:var(--danger);  }
+        .verdict-banner.suspicious { background:rgba(245,158,11,.12); border:1.5px solid rgba(245,158,11,.4); color:var(--warning); }
 
-    a:hover {
-      text-decoration: underline;
-    }
+        /* GRID */
+        .grid-3 { display:grid; grid-template-columns:repeat(3,1fr); gap:1.25rem; margin-bottom:1.5rem; }
+        .grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:1.5rem; margin-bottom:1.5rem; }
+        @media(max-width:700px) { .grid-3,.grid-2 { grid-template-columns:1fr; } }
 
-    .frame-list {
-      margin-top: 16px;
-      max-height: 200px;
-      overflow-y: auto;
-      text-align: left;
-      border: 1px solid #f0f0f0;
-      border-radius: 8px;
-      padding: 8px;
-    }
+        /* STAT TILE */
+        .stat-tile {
+            background:rgba(15,23,42,.55);
+            border:1px solid var(--glass-border);
+            border-radius:16px;
+            padding:1.25rem 1.5rem;
+            text-align:center;
+        }
+        .stat-label { color:var(--text-muted); font-size:.8rem; text-transform:uppercase; letter-spacing:.06em; margin-bottom:.5rem; }
+        .stat-val   { font-size:1.8rem; font-weight:800; }
+        .real-col   { color:var(--success); }
+        .fake-col   { color:var(--danger);  }
+        .sus-col    { color:var(--warning); }
+        .conf-col   { color:var(--primary); }
+        .sec-col    { color:var(--secondary); }
 
-    .frame-list li {
-      padding: 6px 0;
-      border-bottom: 1px solid #f0f0f0;
-    }
-  </style>
+        /* RISK BADGE */
+        .risk-badge {
+            display:inline-flex; align-items:center; gap:.4rem;
+            padding:.35rem .85rem; border-radius:9999px;
+            font-size:.8rem; font-weight:700; text-transform:uppercase; letter-spacing:.05em;
+        }
+        .risk-low    { background:rgba(34,197,94,.15);  color:var(--success); border:1px solid rgba(34,197,94,.3); }
+        .risk-medium { background:rgba(245,158,11,.15); color:var(--warning); border:1px solid rgba(245,158,11,.3); }
+        .risk-high   { background:rgba(239,68,68,.15);  color:var(--danger);  border:1px solid rgba(239,68,68,.3); }
+
+        /* CONF BAR */
+        .conf-bar-bg  { background:rgba(255,255,255,.07); border-radius:9999px; height:10px; overflow:hidden; margin-top:.6rem; }
+        .conf-bar-fill{ height:100%; border-radius:9999px; transition:width .9s cubic-bezier(.4,0,.2,1); }
+
+        /* VIDEO PREVIEW */
+        .video-wrap {
+            background:rgba(15,23,42,.5); border:1px solid var(--glass-border);
+            border-radius:16px; overflow:hidden; margin-bottom:1.5rem;
+        }
+        .preview-video { width:100%; max-height:420px; display:block; }
+
+        /* PANELS */
+        .panel {
+            background:rgba(15,23,42,.5); border:1px solid var(--glass-border);
+            border-radius:16px; padding:1.5rem;
+        }
+        .panel-title {
+            font-size:1rem; font-weight:700; margin-bottom:1rem;
+            display:flex; align-items:center; gap:.5rem; color:var(--text-main);
+        }
+
+        /* SUSPICIOUS FRAMES */
+        .sus-frame-list { max-height:220px; overflow-y:auto; }
+        .sus-frame-list::-webkit-scrollbar { width:6px; }
+        .sus-frame-list::-webkit-scrollbar-track { background:rgba(15,23,42,.4); border-radius:4px; }
+        .sus-frame-list::-webkit-scrollbar-thumb { background:rgba(245,158,11,.4); border-radius:4px; }
+
+        .sus-frame-item {
+            display:flex; justify-content:space-between; align-items:center;
+            padding:.65rem 0; border-bottom:1px solid var(--glass-border); font-size:.88rem;
+        }
+        .sus-frame-item:last-child { border-bottom:none; }
+        .sus-badge {
+            padding:2px 8px; border-radius:6px; font-size:.75rem; font-weight:700;
+        }
+        .badge-fake       { background:rgba(239,68,68,.15);  color:var(--danger);  border:1px solid rgba(239,68,68,.3); }
+        .badge-suspicious { background:rgba(245,158,11,.15); color:var(--warning); border:1px solid rgba(245,158,11,.3); }
+        .badge-real       { background:rgba(34,197,94,.15);  color:var(--success); border:1px solid rgba(34,197,94,.3); }
+
+        /* ALL FRAMES */
+        .frames-list { max-height:280px; overflow-y:auto; }
+        .frames-list::-webkit-scrollbar { width:6px; }
+        .frames-list::-webkit-scrollbar-track { background:rgba(15,23,42,.4); border-radius:4px; }
+        .frames-list::-webkit-scrollbar-thumb { background:rgba(139,92,246,.4); border-radius:4px; }
+
+        .frame-item {
+            display:flex; justify-content:space-between; align-items:center;
+            padding:.6rem 0; border-bottom:1px solid var(--glass-border); color:var(--text-muted); font-size:.88rem;
+        }
+        .frame-item:last-child { border-bottom:none; }
+
+        /* RISK FACTORS */
+        .risk-factors-panel {
+            background:rgba(239,68,68,.05); border:1px solid rgba(239,68,68,.2);
+            border-radius:16px; padding:1.5rem; margin-bottom:1.5rem;
+        }
+        .risk-factor-item {
+            display:flex; align-items:center; gap:.6rem;
+            padding:.4rem 0; color:var(--text-muted); font-size:.9rem;
+        }
+
+        /* REPORT */
+        .report-section {
+            background:rgba(255,255,255,.03); border:1px solid var(--glass-border);
+            border-radius:16px; padding:1.5rem; text-align:center;
+        }
+        .report-section p { color:var(--text-muted); font-size:.9rem; margin-bottom:1rem; }
+        .btn-report {
+            display:inline-flex; align-items:center; gap:.5rem;
+            padding:.65rem 1.4rem; background:rgba(245,158,11,.15);
+            border:1px solid rgba(245,158,11,.35); color:var(--warning);
+            border-radius:9999px; font-weight:600; font-size:.9rem;
+            cursor:pointer; transition:all .25s;
+        }
+        .btn-report:hover { background:rgba(245,158,11,.25); transform:translateY(-1px); }
+        .toast {
+            display:none; margin-top:.75rem; padding:.5rem 1rem;
+            background:rgba(34,197,94,.15); border:1px solid rgba(34,197,94,.3);
+            color:var(--success); border-radius:9999px;
+            font-size:.85rem; font-weight:600; animation:fadeIn .3s;
+        }
+        @keyframes fadeIn { from{opacity:0} to{opacity:1} }
+
+        /* ANALYTICS GRID */
+        .analytics-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:1rem; }
+        @media(max-width:500px){ .analytics-grid{ grid-template-columns:1fr; } }
+        .analytics-tile {
+            background:rgba(255,255,255,.04); border:1px solid var(--glass-border);
+            border-radius:12px; padding:1rem 1.25rem;
+        }
+        .analytics-label { color:var(--text-muted); font-size:.78rem; text-transform:uppercase; letter-spacing:.05em; }
+        .analytics-val   { font-size:1.35rem; font-weight:700; color:var(--text-main); margin-top:.2rem; }
+    </style>
 </head>
-
 <body>
-  <div class="container">
-    <h1>Video Detection Result</h1>
 
-    <video src="{{ url_for('uploaded_file', filename=filename) }}" controls></video>
-
-    <p><strong>Overall Label:</strong>
-      <span class="label {{ 'real' if label.lower()=='real' else 'fake' }}">{{ label }}</span>
-    </p>
-    <p><strong>Confidence:</strong> {{ confidence }}%</p>
-
-    <h3>Frame-wise Predictions</h3>
-    <div class="frame-list">
-      <ul>
-        {% for idx, result in frame_results_with_idx %}
-        <li>Frame {{ idx }}:
-          <span class="{{ 'real' if result[0].lower()=='real' else 'fake' }}">
-            {{ result[0].upper() }}
-          </span> ({{ (result[1]*100)|round(2) }}%)
-        </li>
-        {% endfor %}
-      </ul>
+    <!-- NAV -->
+    <div class="nav">
+        <div class="brand">⚡ DeepGuard AI</div>
+        <a href="{{ url_for('index') }}" class="btn-back">
+            <i data-lucide="arrow-left" style="width:16px;height:16px;"></i> Analyze Another
+        </a>
     </div>
 
-    <p style="margin-top:16px;"><a href="{{ url_for('index') }}">← Try another file</a></p>
-  </div>
-</body>
+    <!-- CARD -->
+    <div class="result-card">
+        <h1 class="result-title">Video Analysis Complete</h1>
+        <p class="result-subtitle">Frame-by-frame ensemble analysis · Temporal consistency check · Social-media optimised</p>
 
+        <!-- VERDICT -->
+        <div class="verdict-banner {{ label.lower() }}">
+            {% if label.lower() == 'real' %}
+                <i data-lucide="shield-check" style="width:36px;height:36px;"></i> REAL
+            {% elif label.lower() == 'fake' %}
+                <i data-lucide="shield-x" style="width:36px;height:36px;"></i> FAKE — AI Generated
+            {% else %}
+                <i data-lucide="alert-triangle" style="width:36px;height:36px;"></i> SUSPICIOUS
+            {% endif %}
+        </div>
+
+        <!-- STATS ROW -->
+        <div class="grid-3">
+            <div class="stat-tile">
+                <div class="stat-label">Overall Verdict</div>
+                <div class="stat-val {% if label.lower()=='real' %}real-col{% elif label.lower()=='fake' %}fake-col{% else %}sus-col{% endif %}">
+                    {{ label.upper() }}
+                </div>
+            </div>
+            <div class="stat-tile">
+                <div class="stat-label">Confidence</div>
+                <div class="stat-val conf-col">{{ confidence }}%</div>
+            </div>
+            <div class="stat-tile">
+                <div class="stat-label">Risk Level</div>
+                <div style="margin-top:.6rem;">
+                    <span class="risk-badge risk-{{ analytics.risk_level.lower() }}">
+                        <i data-lucide="{% if analytics.risk_level=='Low' %}shield-check{% elif analytics.risk_level=='Medium' %}alert-triangle{% else %}shield-x{% endif %}"
+                           style="width:12px;height:12px;"></i>
+                        {{ analytics.risk_level }} Risk
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <!-- CONFIDENCE BAR -->
+        <div style="margin-bottom:1.5rem;padding:1.2rem;background:rgba(15,23,42,.5);border:1px solid var(--glass-border);border-radius:16px;">
+            <div style="display:flex;justify-content:space-between;margin-bottom:.5rem;">
+                <span style="color:var(--text-muted);font-size:.85rem;text-transform:uppercase;letter-spacing:.05em;">Overall Confidence</span>
+                <span style="font-weight:700;color:var(--primary);">{{ confidence }}%</span>
+            </div>
+            <div class="conf-bar-bg">
+                <div class="conf-bar-fill" id="confBar"
+                     style="width:0%;background:{% if label.lower()=='real' %}linear-gradient(90deg,#22c55e,#16a34a){% elif label.lower()=='fake' %}linear-gradient(90deg,#ef4444,#dc2626){% else %}linear-gradient(90deg,#f59e0b,#d97706){% endif %}">
+                </div>
+            </div>
+        </div>
+
+        <!-- VIDEO PREVIEW -->
+        <div class="video-wrap">
+            <video src="{{ url_for('uploaded_file', filename=filename) }}"
+                   class="preview-video" controls preload="metadata"></video>
+        </div>
+
+        <!-- ANALYTICS DASHBOARD -->
+        <div style="margin-bottom:1.5rem;">
+            <div class="panel-title">
+                <i data-lucide="activity" style="width:18px;height:18px;color:var(--secondary);"></i>
+                Analytics Dashboard
+            </div>
+            <div class="analytics-grid">
+                <div class="analytics-tile">
+                    <div class="analytics-label">Frames Analyzed</div>
+                    <div class="analytics-val">{{ analytics.total_frames_analyzed }}</div>
+                </div>
+                <div class="analytics-tile">
+                    <div class="analytics-label">Suspicious Frames</div>
+                    <div class="analytics-val" style="color:var(--warning);">{{ analytics.suspicious_frame_count }}</div>
+                </div>
+                <div class="analytics-tile">
+                    <div class="analytics-label">Fake Frame Ratio</div>
+                    <div class="analytics-val" style="color:var(--danger);">{{ analytics.fake_frame_ratio }}%</div>
+                </div>
+                <div class="analytics-tile">
+                    <div class="analytics-label">Temporal Variance</div>
+                    <div class="analytics-val" style="color:var(--secondary);">{{ analytics.temporal_variance }}</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- CHART + SUSPICIOUS FRAMES SIDE BY SIDE -->
+        <div class="grid-2">
+            <!-- FRAME DISTRIBUTION CHART -->
+            <div class="panel">
+                <div class="panel-title">
+                    <i data-lucide="pie-chart" style="width:18px;height:18px;color:var(--primary);"></i>
+                    Frame Distribution
+                </div>
+                <canvas id="frameChart" style="max-height:220px;"></canvas>
+            </div>
+
+            <!-- SUSPICIOUS FRAMES -->
+            <div class="panel">
+                <div class="panel-title">
+                    <i data-lucide="alert-octagon" style="width:18px;height:18px;color:var(--warning);"></i>
+                    Suspicious Frames  
+                    <span style="background:rgba(245,158,11,.15);color:var(--warning);padding:2px 8px;border-radius:9999px;font-size:.75rem;">
+                        {{ suspicious_frames|length }}
+                    </span>
+                </div>
+                {% if suspicious_frames %}
+                <div class="sus-frame-list">
+                    {% for fr in suspicious_frames %}
+                    <div class="sus-frame-item">
+                        <div style="display:flex;align-items:center;gap:.75rem;">
+                            <i data-lucide="film" style="width:14px;height:14px;color:var(--text-muted);"></i>
+                            <span>Frame {{ fr.frame_index }}</span>
+                        </div>
+                        <div style="display:flex;align-items:center;gap:.6rem;">
+                            <span class="sus-badge {% if fr.label=='fake' %}badge-fake{% elif fr.label=='suspicious' %}badge-suspicious{% else %}badge-real{% endif %}">
+                                {{ fr.label.upper() }}
+                            </span>
+                            <span style="color:var(--text-main);font-weight:700;font-size:.85rem;">{{ fr.confidence }}%</span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div style="text-align:center;padding:2rem 0;color:var(--text-muted);">
+                    <i data-lucide="check-circle" style="width:28px;height:28px;color:var(--success);display:block;margin:0 auto .5rem;"></i>
+                    No highly suspicious frames found
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- ALL FRAME RESULTS -->
+        <div class="panel" style="margin-top:1.5rem;">
+            <div class="panel-title">
+                <i data-lucide="film" style="width:18px;height:18px;color:var(--primary);"></i>
+                All Frame Predictions
+                <span style="background:rgba(139,92,246,.15);color:var(--primary);padding:2px 8px;border-radius:9999px;font-size:.75rem;">
+                    {{ frame_results|length }} frames
+                </span>
+            </div>
+            <div class="frames-list">
+                {% for fr in frame_results %}
+                <div class="frame-item">
+                    <div style="display:flex;align-items:center;gap:.75rem;">
+                        <span style="color:var(--text-muted);min-width:72px;">Frame {{ fr.frame_index }}</span>
+                        <span class="sus-badge {% if fr.label=='fake' %}badge-fake{% elif fr.label=='suspicious' %}badge-suspicious{% else %}badge-real{% endif %}">
+                            {{ fr.label.upper() }}
+                        </span>
+                    </div>
+                    <div style="display:flex;gap:1rem;font-size:.82rem;color:var(--text-muted);">
+                        <span>Real: <strong style="color:var(--success);">{{ fr.real_prob }}%</strong></span>
+                        <span>Fake: <strong style="color:var(--danger);">{{ fr.fake_prob }}%</strong></span>
+                        <span style="color:var(--text-main);font-weight:700;">{{ fr.confidence }}%</span>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- RISK FACTORS -->
+        {% if risk_factors %}
+        <div class="risk-factors-panel" style="margin-top:1.5rem;">
+            <div class="panel-title" style="color:var(--danger);">
+                <i data-lucide="alert-circle" style="width:18px;height:18px;"></i>
+                Risk Factors Detected
+            </div>
+            {% for factor in risk_factors %}
+            <div class="risk-factor-item">
+                <i data-lucide="alert-triangle" style="width:14px;height:14px;color:var(--danger);"></i>
+                {{ factor }}
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <!-- REPORT -->
+        <div class="report-section" style="margin-top:1.5rem;">
+            <p>Think this result is wrong? Help improve DeepGuard AI accuracy.</p>
+            <button class="btn-report" id="reportBtn"
+                    onclick="reportFalse('{{ filename }}','{{ label }}',{{ confidence }})">
+                <i data-lucide="flag" style="width:14px;height:14px;"></i>
+                Report Incorrect Prediction
+            </button>
+            <div class="toast" id="reportToast">✓ Logged for retraining. Thank you!</div>
+        </div>
+    </div>
+
+    <script>
+        lucide.createIcons();
+
+        // Confidence bar animation
+        setTimeout(() => {
+            document.getElementById('confBar').style.width = '{{ confidence }}%';
+        }, 200);
+
+        // Frame distribution chart
+        {% set fake_count   = frame_results | selectattr('label','equalto','fake')       | list | length %}
+        {% set sus_count    = frame_results | selectattr('label','equalto','suspicious')  | list | length %}
+        {% set real_count   = frame_results | selectattr('label','equalto','real')        | list | length %}
+
+        const ctx = document.getElementById('frameChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Fake', 'Suspicious', 'Real'],
+                datasets: [{
+                    data: [{{ fake_count }}, {{ sus_count }}, {{ real_count }}],
+                    backgroundColor: [
+                        'rgba(239,68,68,.75)',
+                        'rgba(245,158,11,.75)',
+                        'rgba(34,197,94,.75)'
+                    ],
+                    borderColor: [
+                        'rgba(239,68,68,1)',
+                        'rgba(245,158,11,1)',
+                        'rgba(34,197,94,1)'
+                    ],
+                    borderWidth: 2,
+                    hoverOffset: 6,
+                }]
+            },
+            options: {
+                cutout: '65%',
+                plugins: {
+                    legend: {
+                        labels: { color: '#94a3b8', font: { family: 'Outfit', size: 12 } }
+                    }
+                }
+            }
+        });
+
+        async function reportFalse(filename, predictedLabel, confidence) {
+            const btn = document.getElementById('reportBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<i data-lucide="loader" style="width:14px;height:14px;"></i> Reporting…';
+            lucide.createIcons();
+
+            const userLabel = predictedLabel.toLowerCase() === 'real' ? 'fake' : 'real';
+            try {
+                await fetch('/report-false', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        filepath: 'uploads/' + filename,
+                        predicted_label: predictedLabel,
+                        user_label: userLabel,
+                        confidence: confidence
+                    })
+                });
+            } catch(e) {}
+
+            document.getElementById('reportToast').style.display = 'block';
+            btn.style.opacity = '.5';
+        }
+    </script>
+</body>
 </html>

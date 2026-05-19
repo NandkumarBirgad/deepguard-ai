@@ -35,5 +35,12 @@ uploads/
 
 # ---- Build / Package Files ----
 dist/
+.dist/
 build/
 *.egg-info/
+
+# ---- Local DB & Temp Files ----
+database/
+false_predictions/
+myenv/
+

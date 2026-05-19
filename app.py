@@ -1,230 +1,54 @@
-# app.py
+# app.py — DeepGuard AI v2.0
 
 import os
+import traceback
+import requests as http_requests  # for Sightengine API calls
 from flask import Flask, request, render_template, send_from_directory, jsonify
+from flask_cors import CORS
 from werkzeug.utils import secure_filename
 from PIL import Image
-import tensorflow as tf
-from utils import load_xception_model, predict_image_xception, predict_video_xception
+
+# Load environment variables from .env if present
+if os.path.exists(".env"):
+    with open(".env", "r") as env_file:
+        for line in env_file:
+            line = line.strip()
+            if line and not line.startswith("#") and "=" in line:
+                key, val = line.split("=", 1)
+                os.environ[key.strip()] = val.strip()
+
 import firebase_admin
 from firebase_admin import credentials, auth
-from tensorflow.keras.metrics import AUC, Precision, Recall
-import traceback
 
-# -------------------- CONFIG -------------------- #
-UPLOAD_FOLDER = "uploads"
-ALLOWED_IMAGE_EXT = {"png", "jpg", "jpeg"}
-ALLOWED_VIDEO_EXT = {"mp4", "avi", "mov", "mkv"}
-ALLOWED_EXTENSIONS = ALLOWED_IMAGE_EXT.union(ALLOWED_VIDEO_EXT)
 
-IMAGE_MODEL_PATH = "models/xception_image_model.keras"
-VIDEO_MODEL_PATH = "models/xception_video_model.keras"
+# ─────────────────── CONFIG ───────────────────
+UPLOAD_FOLDER      = "uploads"
+FALSE_PRED_DIR     = "false_predictions"
+ALLOWED_IMAGE_EXT  = {"png", "jpg", "jpeg", "webp"}
+ALLOWED_VIDEO_EXT  = {"mp4", "avi", "mov", "mkv", "webm"}
+ALLOWED_EXTENSIONS = ALLOWED_IMAGE_EXT | ALLOWED_VIDEO_EXT
+
 
 app = Flask(__name__)
-app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
-app.config["MAX_CONTENT_LENGTH"] = 500 * 1024 * 1024  # 500 MB
-app.secret_key = os.environ.get('SECRET_KEY', 'your-secret-key-here')
+CORS(app)
+app.config["UPLOAD_FOLDER"]      = UPLOAD_FOLDER
+app.config["MAX_CONTENT_LENGTH"] = 500 * 1024 * 1024   # 500 MB
+app.secret_key = os.environ.get("SECRET_KEY", "deepguard-secret-v2")
+
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+os.makedirs(FALSE_PRED_DIR, exist_ok=True)
 
-# -------------------- FIREBASE -------------------- #
-cred = credentials.Certificate("serviceAccountKey.json")
-firebase_admin.initialize_app(cred)
+# ─────────────────── FIREBASE ───────────────────
+try:
+    cred = credentials.Certificate("serviceAccountKey.json")
+    firebase_admin.initialize_app(cred)
+    print("[INFO] Firebase initialised")
+except Exception as e:
+    print(f"[WARN] Firebase init failed: {e}")
 
-# -------------------- LOAD MODELS -------------------- #
-def safe_load_model(model_path):
-    if not os.path.exists(model_path):
-        print(f"[ERROR] Model file does not exist: {model_path}")
-        return None, ["fake", "real"]
-
-    try:
-        model = tf.keras.models.load_model(
-            model_path,
-            compile=False,
-            custom_objects={"AUC": AUC, "Precision": Precision, "Recall": Recall}
-        )
-        classes = ["fake", "real"]
-        print(f"[INFO] Model loaded successfully: {model_path}")
-        return model, classes
-
-    except Exception as e:
-        print(f"[ERROR] Could not load model {model_path}:")
-        print(traceback.format_exc())
-        return None, ["fake", "real"]
-
-image_model, image_classes = safe_load_model(IMAGE_MODEL_PATH)
-video_model, video_classes = safe_load_model(VIDEO_MODEL_PATH)
-
-# -------------------- HELPERS -------------------- #
-def allowed_file(filename):
-    return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
-
-def verify_token(id_token):
-    try:
-        return auth.verify_id_token(id_token)
-    except Exception:
-        return None
-
-# -------------------- ROUTES -------------------- #
-@app.route("/", methods=["GET", "POST"])
+@app.route("/")
 def index():
-    if request.method == "POST":
-        if "media" not in request.files:
-            return render_template("index.html", error="No file uploaded")
-
-        file = request.files["media"]
-        if file.filename == "":
-            return render_template("index.html", error="Empty file name")
-        if not allowed_file(file.filename):
-            return render_template("index.html", error="Unsupported file type")
-
-        filename = secure_filename(file.filename)
-        filepath = os.path.join(app.config["UPLOAD_FOLDER"], filename)
-        file.save(filepath)
-
-        ext = filename.rsplit(".", 1)[1].lower()
-
-        # ---------------- IMAGE ---------------- #
-        if ext in ALLOWED_IMAGE_EXT:
-            if image_model is None:
-                return render_template("index.html", error="Image model not loaded")
-
-            pil_img = Image.open(filepath).convert("RGB")
-            label, confidence, probs = predict_image_xception(image_model, image_classes, pil_img)
-            class_probs = list(zip(image_classes, [float(p) for p in probs]))
-
-            return render_template("result_image.html",
-                                   filename=filename,
-                                   label=label.upper(),
-                                   confidence=round(confidence * 100, 2),
-                                   class_probs=class_probs)
-
-        # ---------------- VIDEO ---------------- #
-        elif ext in ALLOWED_VIDEO_EXT:
-            if video_model is None:
-                return render_template("index.html", error="Video model not loaded")
-
-            final_label, confidence, frame_results = predict_video_xception(
-                video_model, video_classes, video_path=filepath, max_frames=50, frame_skip=10
-            )
-            if final_label is None:
-                return render_template("index.html", error="Cannot process video")
-
-            # Convert to consistent dict format
-            frame_results_dicts = []
-            for res in frame_results:
-                # res may already be tuple or dict depending on your utils
-                if isinstance(res, dict):
-                    frame_results_dicts.append({
-                        "label": res.get("label", "UNKNOWN"),
-                        "confidence": float(res.get("confidence", 0))
-                    })
-                elif isinstance(res, (list, tuple)) and len(res) == 2:
-                    frame_results_dicts.append({
-                        "label": res[0],
-                        "confidence": float(res[1])
-                    })
-
-            indexed_frames = [(i, res) for i, res in enumerate(frame_results_dicts)]
-
-            return render_template("result_video.html",
-                                   filename=filename,
-                                   label=final_label.upper(),
-                                   confidence=round(confidence * 100, 2),
-                                   frame_results=indexed_frames)
-
     return render_template("index.html")
-
-
-@app.route("/upload", methods=["POST"])
-def upload():
-    print("[INFO] Received upload request")
-
-    token = request.headers.get("Authorization", "").replace("Bearer ", "")
-    user = verify_token(token)
-    if not user:
-        return jsonify({"message": "Unauthorized - Invalid or missing token"}), 401
-
-    if "image" not in request.files:
-        return jsonify({"message": "No file part"}), 400
-
-    file = request.files["image"]
-    if file.filename == "":
-        return jsonify({"message": "No file selected"}), 400
-    if not allowed_file(file.filename):
-        return jsonify({"message": "Unsupported file type"}), 400
-
-    filename = secure_filename(file.filename)
-    filepath = os.path.join(app.config["UPLOAD_FOLDER"], filename)
-    file.save(filepath)
-
-    ext = filename.rsplit(".", 1)[1].lower()
-
-    # ---------------- IMAGE MODEL ---------------- #
-    if ext in ALLOWED_IMAGE_EXT:
-        if image_model is None:
-            return jsonify({"message": "Image model not loaded"}), 500
-
-        pil_img = Image.open(filepath).convert("RGB")
-        label, confidence, probs = predict_image_xception(image_model, image_classes, pil_img)
-
-        response = {
-            "prediction": "REAL" if label.lower() == "real" else "FAKE",
-            "confidence": float(confidence),
-            "frame_results": [{"label": label.upper(), "confidence": float(confidence)}],
-            "face_count": 1,
-            "suspicion_score": round(1 - confidence, 3),
-            "risk_level": "low" if confidence > 0.8 else "medium" if confidence > 0.5 else "high",
-            "risk_factors": ["Blur", "Lighting Issues"] if confidence < 0.5 else [],
-            "quality_metrics": {
-                "blur_score": 0.75,
-                "brightness": 0.6,
-                "contrast": 0.55,
-                "edge_density": 0.42
-            }
-        }
-        return jsonify(response), 200
-
-    # ---------------- VIDEO MODEL ---------------- #
-    elif ext in ALLOWED_VIDEO_EXT:
-        if video_model is None:
-            return jsonify({"message": "Video model not loaded"}), 500
-
-        final_label, confidence, frame_results = predict_video_xception(
-            video_model, video_classes, filepath, max_frames=50, frame_skip=10
-        )
-
-        # Convert frame_results to consistent dicts
-        frame_results_dicts = []
-        for res in frame_results:
-            if isinstance(res, dict):
-                frame_results_dicts.append({
-                    "label": res.get("label", "UNKNOWN"),
-                    "confidence": float(res.get("confidence", 0))
-                })
-            elif isinstance(res, (list, tuple)) and len(res) == 2:
-                frame_results_dicts.append({
-                    "label": res[0],
-                    "confidence": float(res[1])
-                })
-
-        response = {
-            "prediction": "REAL" if final_label.lower() == "real" else "FAKE",
-            "confidence": float(confidence),
-            "frame_results": frame_results_dicts,
-            "face_count": len(frame_results_dicts),
-            "suspicion_score": round(1 - confidence, 3),
-            "risk_level": "low" if confidence > 0.8 else "medium" if confidence > 0.5 else "high",
-            "risk_factors": ["Frame inconsistencies", "Blinking anomalies"] if confidence < 0.5 else [],
-            "quality_metrics": {
-                "blur_score": 0.72,
-                "brightness": 0.61,
-                "contrast": 0.49,
-                "edge_density": 0.38
-            }
-        }
-        return jsonify(response), 200
-
-    return jsonify({"message": "Unsupported extension"}), 400
 
 
 @app.route("/uploads/<filename>")
@@ -242,5 +66,320 @@ def signup():
     return render_template("signup.html")
 
 
+# ─────────────────── SIGHTENGINE AI-IMAGE DETECTION ───────────────────
+# Sightengine API credentials
+SIGHTENGINE_API_USER   = os.environ.get("SIGHTENGINE_API_USER", "1809087599")
+SIGHTENGINE_API_SECRET = os.environ.get("SIGHTENGINE_API_SECRET", "J3sepgMY7CjrrgQeLWjfc7C7pjhNpvDo")
+SIGHTENGINE_API_URL    = "https://api.sightengine.com/1.0/check.json"
+
+# Allowed image extensions for this feature
+AI_IMAGE_EXTENSIONS = {"png", "jpg", "jpeg", "webp", "gif", "bmp"}
+
+# Static uploads folder (served via /static/uploads/)
+STATIC_UPLOAD_FOLDER = os.path.join("static", "uploads")
+os.makedirs(STATIC_UPLOAD_FOLDER, exist_ok=True)
+
+
+def call_sightengine(filepath):
+    """
+    Send the image at `filepath` to Sightengine's genai model.
+    Returns the parsed JSON response dict, or raises on failure.
+    """
+    with open(filepath, "rb") as img_file:
+        response = http_requests.post(
+            SIGHTENGINE_API_URL,
+            files={"media": img_file},
+            data={
+                "models":     "genai",          # AI-generated image model
+                "api_user":   SIGHTENGINE_API_USER,
+                "api_secret": SIGHTENGINE_API_SECRET,
+            },
+            timeout=30,  # seconds
+        )
+    response.raise_for_status()   # raises HTTPError for 4xx/5xx
+    return response.json()
+
+
+@app.route("/detect-ai", methods=["GET", "POST"])
+def detect_ai_image():
+    """
+    Homepage + handler for the Sightengine AI-generated image detector.
+    GET  → render upload form
+    POST → validate file → call Sightengine API → show result
+    """
+    if request.method == "GET":
+        return render_template("detect_ai.html")
+
+    # ── Validate uploaded file ──
+    if "image" not in request.files:
+        return render_template(
+            "detect_ai.html",
+            error="No file received. Please choose an image to upload."
+        )
+
+    file = request.files["image"]
+
+    if not file or file.filename == "":
+        return render_template(
+            "detect_ai.html",
+            error="No file selected. Please choose an image file."
+        )
+
+    ext = file.filename.rsplit(".", 1)[-1].lower() if "." in file.filename else ""
+    if ext not in AI_IMAGE_EXTENSIONS:
+        return render_template(
+            "detect_ai.html",
+            error=f"Unsupported file type '.{ext}'. Please upload a PNG, JPG, JPEG, WEBP, GIF, or BMP image."
+        )
+
+    # ── Save to static/uploads so we can display it ──
+    filename = secure_filename(file.filename)
+    save_path = os.path.join(STATIC_UPLOAD_FOLDER, filename)
+    file.save(save_path)
+
+    # ── Call Sightengine API ──
+    try:
+        api_data = call_sightengine(save_path)
+    except http_requests.exceptions.Timeout:
+        return render_template(
+            "detect_ai.html",
+            error="The Sightengine API timed out. Please try again."
+        )
+    except http_requests.exceptions.HTTPError as exc:
+        return render_template(
+            "detect_ai.html",
+            error=f"Sightengine API returned an error: {exc}"
+        )
+    except Exception as exc:
+        return render_template(
+            "detect_ai.html",
+            error=f"Unexpected error while contacting the API: {exc}"
+        )
+
+    # ── Check for API-level errors ──
+    if api_data.get("status") != "success":
+        err_msg = api_data.get("error", {}).get("message", "Unknown API error")
+        return render_template(
+            "detect_ai.html",
+            error=f"Sightengine API error: {err_msg}"
+        )
+
+    # ── Extract ai_generated score ──
+    # Sightengine returns {"type": {"ai_generated": 0.xx}} under genai model
+    type_info   = api_data.get("type", {})
+    ai_score    = type_info.get("ai_generated", None)
+
+    if ai_score is None:
+        return render_template(
+            "detect_ai.html",
+            error="The API response did not contain an AI-generated probability score. "
+                  "This may happen for unsupported image content."
+        )
+
+    # ── Classify result ──
+    THRESHOLD     = 0.7
+    score_pct     = round(ai_score * 100, 2)         # e.g. 85.3
+    is_ai         = ai_score > THRESHOLD
+    verdict       = "AI Generated Image" if is_ai else "Real Image"
+    confidence    = score_pct if is_ai else round((1 - ai_score) * 100, 2)
+
+    return render_template(
+        "detect_ai.html",
+        # uploaded image URL (served from /static/uploads/)
+        image_url  = f"/static/uploads/{filename}",
+        filename   = filename,
+        # result fields
+        verdict    = verdict,
+        is_ai      = is_ai,
+        ai_score   = score_pct,          # raw AI probability %
+        confidence = confidence,          # confidence in the verdict %
+        threshold  = int(THRESHOLD * 100),
+        # raw API payload for debugging (hidden in UI)
+        raw_api    = api_data,
+    )
+
+
+# ─────────────────── HUGGING FACE AI-VIDEO DETECTION ───────────────────
+# Allowed video extensions
+AI_VIDEO_EXTENSIONS = {"mp4", "mov", "avi", "mkv", "webm", "flv"}
+HF_API_TOKEN = os.environ.get("HF_API_TOKEN", "")
+HF_VIDEO_MODEL = "umm-maybe/AI-image-detector"  # Best for detecting general AI-generated content (Midjourney, Sora, etc.)
+HF_API_URL = f"https://router.huggingface.co/hf-inference/models/{HF_VIDEO_MODEL}"
+
+
+def call_huggingface_video(filepath):
+    """
+    Since Hugging Face free Inference API does not support raw video deepfake models directly,
+    we extract 3 frames from the video (at 25%, 50%, and 75%) and send them to an AI image detector.
+    """
+    import cv2
+    cap = cv2.VideoCapture(filepath)
+    if not cap.isOpened():
+        raise Exception("Could not open video file to extract frame")
+    
+    total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+    frame_indices = [
+        max(0, int(total_frames * 0.25)),
+        max(0, int(total_frames * 0.50)),
+        max(0, int(total_frames * 0.75))
+    ]
+    
+    extracted_frames = []
+    for idx in frame_indices:
+        cap.set(cv2.CAP_PROP_POS_FRAMES, idx)
+        ret, frame = cap.read()
+        if ret:
+            extracted_frames.append(frame)
+    cap.release()
+    
+    if not extracted_frames:
+        raise Exception("Failed to read frames from video")
+        
+    headers = {
+        "Authorization": f"Bearer {HF_API_TOKEN}",
+        "Content-Type": "image/jpeg"
+    }
+    
+    all_responses = []
+    # Send all 3 frames and collect responses
+    for frame in extracted_frames:
+        ret, buffer = cv2.imencode('.jpg', frame)
+        if not ret:
+            continue
+            
+        data = buffer.tobytes()
+        response = http_requests.post(
+            HF_API_URL,
+            headers=headers,
+            data=data,
+            timeout=60,
+        )
+        
+        if response.status_code == 200:
+            all_responses.append(response.json())
+        else:
+            # If rate limited or model loading on a frame, just ignore and continue
+            pass
+            
+    if not all_responses:
+        raise Exception("Hugging Face API failed on all extracted frames.")
+        
+    return all_responses
+
+
+@app.route("/detect-ai-video", methods=["GET", "POST"])
+def detect_ai_video():
+    """
+    Upload form + handler for the Hugging Face AI-generated video detector.
+    GET  → render upload form
+    POST → validate → call Hugging Face API → show result
+    """
+    if request.method == "GET":
+        return render_template("detect_ai_video.html")
+
+    # ── Validate uploaded file ──
+    if "video" not in request.files:
+        return render_template(
+            "detect_ai_video.html",
+            error="No file received. Please choose a video to upload."
+        )
+
+    file = request.files["video"]
+
+    if not file or file.filename == "":
+        return render_template(
+            "detect_ai_video.html",
+            error="No file selected. Please choose a video file."
+        )
+
+    ext = file.filename.rsplit(".", 1)[-1].lower() if "." in file.filename else ""
+    if ext not in AI_VIDEO_EXTENSIONS:
+        return render_template(
+            "detect_ai_video.html",
+            error=f"Unsupported file type '.{ext}'. Please upload an MP4, MOV, AVI, MKV, WEBM, or FLV video."
+        )
+
+    # ── Save to static/uploads ──
+    filename  = secure_filename(file.filename)
+    save_path = os.path.join(STATIC_UPLOAD_FOLDER, filename)
+    file.save(save_path)
+
+    # ── Call Hugging Face API ──
+    try:
+        api_data = call_huggingface_video(save_path)
+    except http_requests.exceptions.Timeout:
+        return render_template(
+            "detect_ai_video.html",
+            error="The Hugging Face API timed out. Try a shorter/smaller video."
+        )
+    except http_requests.exceptions.HTTPError as exc:
+        return render_template(
+            "detect_ai_video.html",
+            error=f"Hugging Face API HTTP error: {exc}"
+        )
+    except Exception as exc:
+        return render_template(
+            "detect_ai_video.html",
+            error=f"Unexpected error while contacting the API: {exc}"
+        )
+
+    # ── API-level error check ──
+    if isinstance(api_data, dict) and "error" in api_data:
+        err_msg = api_data.get("error", "Unknown API error")
+        return render_template(
+            "detect_ai_video.html",
+            error=f"Hugging Face API error: {err_msg}. The model might be loading, please wait and try again."
+        )
+
+    # ── Extract ai_generated score ──
+    ai_score = None
+    if isinstance(api_data, list):
+        # Flatten responses if multiple frames were analyzed: [[{"label":"artificial", "score":0.9}]]
+        items_to_check = api_data
+        if len(api_data) > 0 and isinstance(api_data[0], list):
+            items_to_check = [item for sublist in api_data for item in sublist]
+            
+        fake_scores = []
+        found_label = False
+        for item in items_to_check:
+            label = str(item.get("label", "")).upper()
+            if "FAKE" in label or "LABEL_1" in label or "ARTIFICIAL" in label:
+                fake_scores.append(item.get("score", 0.0))
+                found_label = True
+        
+        if found_label and fake_scores:
+            ai_score = max(fake_scores)  # Use the maximum AI score detected in any frame
+        elif len(items_to_check) > 0:
+            # Fallback
+            ai_score = items_to_check[0].get("score", 0.5)
+
+    if ai_score is None:
+        return render_template(
+            "detect_ai_video.html",
+            error="The API response did not contain a recognizable probability score. "
+                  "Try a different video format or check the model status."
+        )
+
+    # ── Classify result ──
+    THRESHOLD  = 0.7
+    score_pct  = round(ai_score * 100, 2)
+    is_ai      = ai_score > THRESHOLD
+    verdict    = "AI Generated Video" if is_ai else "Real Video"
+    confidence = score_pct if is_ai else round((1 - ai_score) * 100, 2)
+
+    return render_template(
+        "detect_ai_video.html",
+        video_url  = f"/static/uploads/{filename}",
+        filename   = filename,
+        verdict    = verdict,
+        is_ai      = is_ai,
+        ai_score   = score_pct,
+        confidence = confidence,
+        threshold  = int(THRESHOLD * 100),
+        raw_api    = api_data,
+    )
+
+
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0", port=5000)
+
