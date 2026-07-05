@@ -40,7 +40,15 @@ os.makedirs(FALSE_PRED_DIR, exist_ok=True)
 
 # ─────────────────── FIREBASE ───────────────────
 try:
-    cred = credentials.Certificate("serviceAccountKey.json")
+    firebase_creds_json = os.environ.get("FIREBASE_CREDENTIALS", "")
+    if firebase_creds_json:
+        # Cloud deployment: credentials passed as JSON string env var
+        import json
+        cred_dict = json.loads(firebase_creds_json)
+        cred = credentials.Certificate(cred_dict)
+    else:
+        # Local development: load from file
+        cred = credentials.Certificate("serviceAccountKey.json")
     firebase_admin.initialize_app(cred)
     print("[INFO] Firebase initialised")
 except Exception as e:
@@ -68,8 +76,8 @@ def signup():
 
 # ─────────────────── SIGHTENGINE AI-IMAGE DETECTION ───────────────────
 # Sightengine API credentials
-SIGHTENGINE_API_USER   = os.environ.get("SIGHTENGINE_API_USER", "1809087599")
-SIGHTENGINE_API_SECRET = os.environ.get("SIGHTENGINE_API_SECRET", "J3sepgMY7CjrrgQeLWjfc7C7pjhNpvDo")
+SIGHTENGINE_API_USER   = os.environ.get("SIGHTENGINE_API_USER", "")
+SIGHTENGINE_API_SECRET = os.environ.get("SIGHTENGINE_API_SECRET", "")
 SIGHTENGINE_API_URL    = "https://api.sightengine.com/1.0/check.json"
 
 # Allowed image extensions for this feature

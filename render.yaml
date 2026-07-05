@@ -1,0 +1,20 @@
+services:
+  - type: web
+    name: deepguard-ai
+    runtime: python
+    buildCommand: pip install -r requirements-deploy.txt
+    startCommand: gunicorn app:app
+    plan: free
+    envVars:
+      - key: HF_API_TOKEN
+        sync: false
+      - key: SIGHTENGINE_API_USER
+        sync: false
+      - key: SIGHTENGINE_API_SECRET
+        sync: false
+      - key: SECRET_KEY
+        generateValue: true
+      - key: FIREBASE_CREDENTIALS
+        sync: false
+      - key: PYTHON_VERSION
+        value: 3.11.0
