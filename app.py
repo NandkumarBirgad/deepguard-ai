@@ -74,6 +74,11 @@ def signup():
     return render_template("signup.html")
 
 
+@app.route("/project-graph")
+def project_graph():
+    return render_template("project_graph.html")
+
+
 # ─────────────────── SIGHTENGINE AI-IMAGE DETECTION ───────────────────
 # Sightengine API credentials
 SIGHTENGINE_API_USER   = os.environ.get("SIGHTENGINE_API_USER", "")
